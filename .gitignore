@@ -1,0 +1,5 @@
+# Local/private data — never commit real leads
+leads-data.json
+_local/
+*.local.json
+.DS_Store
