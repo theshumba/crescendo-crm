@@ -3,3 +3,6 @@ leads-data.json
 _local/
 *.local.json
 .DS_Store
+
+# local safety backups
+crescendo-crm.backup-*.html

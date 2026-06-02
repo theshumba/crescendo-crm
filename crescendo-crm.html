@@ -21,13 +21,13 @@
 -->
 <script>
   window.CRESCENDO_FIREBASE_CONFIG = {
-    apiKey: "PASTE_YOUR_API_KEY",
-    authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-    projectId: "PASTE_YOUR_PROJECT_ID",
-    storageBucket: "PASTE_YOUR_PROJECT.firebasestorage.app",
-    messagingSenderId: "PASTE_YOUR_SENDER_ID",
-    appId: "PASTE_YOUR_APP_ID",
-    measurementId: "PASTE_YOUR_MEASUREMENT_ID"
+    apiKey: "AIzaSyDd2_q4ZKw8bOPhCYj8wNB1mbeco7UFKYY",
+    authDomain: "crescendocrm-5de1b.firebaseapp.com",
+    projectId: "crescendocrm-5de1b",
+    storageBucket: "crescendocrm-5de1b.firebasestorage.app",
+    messagingSenderId: "1066244350556",
+    appId: "1:1066244350556:web:cf064fb67e87ad5fbd7c99",
+    measurementId: "G-181JEDDKVS"
   };
 </script>
 <style>
@@ -189,6 +189,14 @@ ul, ol { list-style: none; }
 .am-user-bar { height: 100%; background: var(--color-primary); border-radius: var(--radius-full); transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1); }
 .am-user-count { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); min-width: 36px; text-align: right; }
 .am-empty { text-align: center; padding: var(--space-10); color: var(--color-text-faint); font-size: var(--text-sm); }
+.am-user-calls { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); min-width: 52px; text-align: right; }
+.call-logger { margin-top: var(--space-3); padding: var(--space-3); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.call-logger-head { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+.call-logger-head i { width: 14px; height: 14px; }
+.call-dial-link { margin-left: auto; color: var(--color-primary); font-weight: 600; text-decoration: none; }
+.call-dial-link:hover { text-decoration: underline; }
+.call-no-phone { margin-left: auto; color: var(--color-text-faint); font-weight: 400; }
+.call-outcome-select { width: 100%; font-size: var(--text-xs); }
 .attribution i { display: inline; width: 10px; height: 10px; vertical-align: -1px; margin-right: 2px; }
 .last-activity { font-size: 0.68rem; color: var(--color-text-faint); margin-top: var(--space-2); padding-top: var(--space-2); border-top: 1px solid var(--color-divider); line-height: 1.4; }
 .theme-toggle { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: none; background: transparent; color: var(--color-text-muted); border-radius: var(--radius-md); cursor: pointer; transition: background var(--transition-interactive); }
@@ -285,6 +293,11 @@ ul, ol { list-style: none; }
 /* ========== ASSIGNED BADGE ========== */
 .assigned-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; color: var(--color-text-muted); background: oklch(from var(--color-text) l c h / 0.06); border-radius: var(--radius-sm); padding: 2px 8px; margin-top: 4px; }
 .assigned-badge i { width: 10px; height: 10px; }
+.claim-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 600; color: var(--color-warning); background: var(--color-warning-highlight); border-radius: var(--radius-sm); padding: 2px 8px; margin-top: 4px; }
+.claim-badge.live { color: var(--color-error); background: var(--color-error-highlight); }
+.claim-badge i { width: 10px; height: 10px; }
+.claim-badge .live-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: claimPulse 1.4s ease-in-out infinite; }
+@keyframes claimPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 .reassign-select { font-size: 0.65rem; padding: 2px 6px; border-radius: var(--radius-sm); border: 1px solid oklch(from var(--color-text) l c h / 0.15); background: var(--color-surface); color: var(--color-text); cursor: pointer; margin-top: 4px; }
 
 /* ========== EMAIL MODAL ========== */
@@ -718,13 +731,8 @@ ul, ol { list-style: none; }
       <label for="login-team-select">Team Member</label>
       <select id="login-team-select">
         <option value="" disabled selected>Choose your name...</option>
-        <option value="Ayoub Rasol">Ayoub Rasol</option>
-        <option value="Melusi Ndoro">Melusi Ndoro</option>
-        <option value="Joshua Khalili">Joshua Khalili</option>
-        <option value="Muneeb Moiz">Muneeb Moiz</option>
-        <option value="Yousuf Zacky">Yousuf Zacky</option>
-        <option value="Ameer Munj">Ameer Munj</option>
-        <option value="__other__">Other...</option>
+        <!-- Options are rebuilt from the canonical roster by rebuildLoginRepOptions() on overlay open. -->
+        <option value="__other__">Add new rep...</option>
         <optgroup label="---"></optgroup>
         <option value="__master__">Master Account</option>
       </select>
@@ -982,6 +990,9 @@ const CrescendoSync = (function () {
   let pushTimer = null;
   let pendingPush = false;
   let onRemoteCb = null;
+  let firstSnapshotSeen = false;    // becomes true after the first remote snapshot arrives
+  let cloudWasEmpty = false;        // true only if that first snapshot had ZERO docs
+  const pendingDeletes = new Set(); // lead ids the app has EXPLICITLY deleted (scoped delete safety)
 
   function isConfigured() {
     const c = window.CRESCENDO_FIREBASE_CONFIG;
@@ -1026,14 +1037,23 @@ const CrescendoSync = (function () {
         const remoteLeads = [];
         snap.forEach(d => {
           const raw = d.data();
-          // Strip internal sync metadata before handing back to the app.
-          const { _modBy, _modAt, ...lead } = raw;
+          // Normalise the sync timestamp to an ISO string for merge comparison.
+          // _modAt may be a Firestore Timestamp (legacy serverTimestamp writes) or an ISO string (new writes).
+          let modAt = raw._modAt;
+          if (modAt && typeof modAt.toDate === 'function') { try { modAt = modAt.toDate().toISOString(); } catch (_) { modAt = ''; } }
+          const lead = { ...raw };
+          lead._modAt = (typeof modAt === 'string') ? modAt : '';
+          // Keep _modAt/_modBy ON the lead so the app-level merge can compare versions.
           remoteLeads.push(lead);
-          lastPushed.set(lead.id, JSON.stringify(lead));
+          // lastPushed ledger stores the exact serialization we'd re-push, so identical
+          // remote echoes are skipped by pushLeads (prevents push/snapshot loops).
+          lastPushed.set(lead.id, JSON.stringify({ ...lead }));
         });
+        // Record cloud-empty state exactly once, on the very first snapshot.
+        if (!firstSnapshotSeen) { cloudWasEmpty = (remoteLeads.length === 0); }
         applyingRemote = true;
-        try { onRemoteCb && onRemoteCb(remoteLeads); }
-        finally { applyingRemote = false; }
+        try { onRemoteCb && onRemoteCb(remoteLeads, { firstSnapshot: !firstSnapshotSeen, cloudEmpty: cloudWasEmpty }); }
+        finally { applyingRemote = false; firstSnapshotSeen = true; }
       },
       err => {
         console.warn('[CrescendoSync] Subscription error:', err);
@@ -1059,19 +1079,28 @@ const CrescendoSync = (function () {
         for (const lead of leads) {
           if (!lead || !lead.id) continue;
           currentIds.add(lead.id);
-          const serialized = JSON.stringify(lead);
-          if (lastPushed.get(lead.id) === serialized) continue; // unchanged
+          // Never push the fictional demo/sample leads into the production cloud.
+          if (lead.source === 'sample') continue;
+          // Stamp _modAt as an ISO string (app-level, survives the round-trip for merge ordering).
+          // Prefer the lead's own _modAt (set by saveState at write time); fall back to now.
+          const stampedAt = (typeof lead._modAt === 'string' && lead._modAt) ? lead._modAt : new Date().toISOString();
+          const stampedBy = lead._modBy || user;
+          const payload = { ...lead, _modBy: stampedBy, _modAt: stampedAt };
+          const serialized = JSON.stringify(payload);
+          if (lastPushed.get(lead.id) === serialized) continue; // unchanged — skip echo
           const ref = window.__fb.doc(db, 'leads', String(lead.id));
-          batch.set(ref, { ...lead, _modBy: user, _modAt: window.__fb.serverTimestamp() });
+          batch.set(ref, payload);
           lastPushed.set(lead.id, serialized);
         }
-        // Deletions: anything we previously pushed but isn't in leads anymore.
-        for (const id of Array.from(lastPushed.keys())) {
+        // Deletions are SCOPED to ids the app explicitly deleted — never inferred from a
+        // partial/stale local list. This prevents mass-deletion of the cloud leads.
+        for (const id of Array.from(pendingDeletes)) {
           if (!currentIds.has(id)) {
             const ref = window.__fb.doc(db, 'leads', String(id));
             batch.delete(ref);
             lastPushed.delete(id);
           }
+          pendingDeletes.delete(id);
         }
         await batch.commit();
         showSyncStatus('connected');
@@ -1087,26 +1116,32 @@ const CrescendoSync = (function () {
     if (!el) {
       el = document.createElement('div');
       el.id = 'sync-status-indicator';
-      el.style.cssText = 'position:fixed;bottom:12px;right:12px;padding:6px 10px;border-radius:6px;font:500 12px system-ui,sans-serif;z-index:9999;pointer-events:none;opacity:0.85;';
+      el.style.cssText = 'position:fixed;bottom:12px;right:12px;padding:6px 10px;border-radius:6px;font:500 12px system-ui,sans-serif;z-index:9999;pointer-events:auto;opacity:0.9;cursor:default;';
       document.body && document.body.appendChild(el);
     }
     if (!el.parentNode && document.body) document.body.appendChild(el);
+    const who = (typeof getCurrentUser === 'function' && getCurrentUser() !== 'Unknown') ? getCurrentUser() : '';
     if (kind === 'connected') {
-      el.textContent = '● Synced';
+      el.textContent = who ? ('● Synced as ' + who) : '● Synced';
+      el.title = 'Live: your work is shared with the team in real time.';
       el.style.background = '#e6f7ec';
       el.style.color = '#1a7a3a';
     } else if (kind === 'error') {
       el.textContent = '● Sync error' + (msg ? ': ' + msg : '');
+      el.title = 'Could not reach the shared backend. Changes are saved locally and will retry.';
       el.style.background = '#fdecea';
       el.style.color = '#a12622';
     } else {
       el.textContent = '● Offline (local only)';
+      el.title = 'Not connected to the shared backend — this device only.';
       el.style.background = '#f1f2f4';
       el.style.color = '#555';
     }
   }
 
-  return { init, subscribe, pushLeads, isConfigured, showSyncStatus };
+  // Mark a lead id for cloud deletion on the next push (explicit deletes only).
+  function queueDelete(id) { if (id != null) pendingDeletes.add(String(id)); }
+  return { init, subscribe, pushLeads, isConfigured, showSyncStatus, queueDelete };
 })();
 
 // ========== USER SESSION ==========
@@ -1114,16 +1149,30 @@ function getCurrentUser() {
   return localStorage.getItem('crescendo-crm-user') || 'Unknown';
 }
 function setCurrentUser(name) {
-  localStorage.setItem('crescendo-crm-user', name);
+  // Always store the canonical spelling so attribution (_modBy/activity.by/etc.) is consistent.
+  const canonical = (name === 'Master') ? 'Master' : resolveRepName(name);
+  localStorage.setItem('crescendo-crm-user', canonical);
   const display = document.getElementById('current-user-display');
-  if (display) display.textContent = name;
+  if (display) display.textContent = canonical;
 }
 function isLoggedIn() {
   return !!localStorage.getItem('crescendo-crm-user');
 }
+function rebuildLoginRepOptions() {
+  const select = document.getElementById('login-team-select');
+  if (!select) return;
+  const reps = getKnownReps();
+  select.innerHTML =
+    '<option value="" disabled selected>Choose your name...</option>' +
+    reps.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('') +
+    '<option value="__other__">Add new rep...</option>' +
+    '<optgroup label="---"></optgroup>' +
+    '<option value="__master__">Master Account</option>';
+}
 function showLoginOverlay() {
   const overlay = document.getElementById('login-overlay');
   overlay.classList.remove('hidden');
+  rebuildLoginRepOptions();
   document.getElementById('login-team-select').value = '';
   document.getElementById('login-custom-input').value = '';
   document.getElementById('login-custom-group').classList.remove('visible');
@@ -1137,6 +1186,38 @@ function isMasterUser() {
 }
 const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj'];
 const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol'];
+// Canonical roster of known reps. Custom reps added via the login picker are
+// persisted here so future logins pick the exact same spelling (no duplicates).
+function getCustomReps() {
+  try { const r = JSON.parse(localStorage.getItem('crescendo-custom-reps') || '[]'); return Array.isArray(r) ? r : []; }
+  catch (_) { return []; }
+}
+function addCustomRep(name) {
+  const clean = String(name || '').trim();
+  if (!clean) return;
+  const reps = getCustomReps();
+  // Skip if it already exists (canonically) anywhere in the roster.
+  if (resolveRepName(clean) !== clean) return;
+  if (!reps.some(r => r.toLowerCase() === clean.toLowerCase())) {
+    reps.push(clean);
+    try { localStorage.setItem('crescendo-custom-reps', JSON.stringify(reps)); } catch (_) {}
+  }
+}
+// Full ordered list of selectable identities (roster + persisted custom reps, de-duped).
+function getKnownReps() {
+  const all = [...CEOS, ...CONSULTANTS, ...getCustomReps()];
+  const seen = new Set();
+  return all.filter(n => { const k = n.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+}
+// Collapse a free-typed name onto its existing canonical spelling if one exists
+// (case/whitespace-insensitive). Prevents 'ameer' / 'Ameer ' splitting history.
+function resolveRepName(name) {
+  const clean = String(name || '').replace(/\s+/g, ' ').trim();
+  if (!clean) return clean;
+  if (clean === 'Master') return 'Master';
+  const match = getKnownReps().find(n => n.toLowerCase() === clean.toLowerCase());
+  return match || clean;
+}
 function canReassignLeads() {
   const u = getCurrentUser();
   return isMasterUser() || CEOS.includes(u);
@@ -1172,6 +1253,93 @@ function hideLoginOverlay() {
 function addActivity(lead, action) {
   if (!lead.activity) lead.activity = [];
   lead.activity.unshift({ action, by: getCurrentUser(), date: new Date().toISOString() });
+}
+// ===== LEAD CLAIM / DOUBLE-CALL PREVENTION =====
+// A claim is "active" for CLAIM_TTL_MS after activeCallAt; after that it is stale
+// (crashed tab / rep moved on) and no longer blocks others.
+const CLAIM_TTL_MS = 15 * 60 * 1000;
+function isClaimActive(lead) {
+  if (!lead || !lead.activeCallAt) return false;
+  return (Date.now() - new Date(lead.activeCallAt).getTime()) < CLAIM_TTL_MS;
+}
+// Who (if anyone) other than the current user is actively on this lead right now.
+function claimedByOther(lead) {
+  if (!isClaimActive(lead)) return null;
+  if (lead.activeCallBy && lead.activeCallBy !== getCurrentUser()) return lead.activeCallBy;
+  return null;
+}
+// Mark the current user as actively working/calling this lead and sync immediately.
+function claimLead(lead) {
+  if (!lead) return;
+  const me = getCurrentUser();
+  lead.claimedBy = me;
+  lead.claimedAt = new Date().toISOString();
+  lead.activeCallBy = me;
+  lead.activeCallAt = new Date().toISOString();
+  addActivity(lead, 'started working this lead');
+  saveState(); // persists locally AND pushes via CrescendoSync.pushLeads
+}
+// Release the active-call flag (rep finished). Keeps claimedBy for attribution.
+function releaseLead(lead) {
+  if (!lead) return;
+  if (lead.activeCallBy === getCurrentUser()) {
+    lead.activeCallBy = null;
+    lead.activeCallAt = null;
+    saveState();
+  }
+}
+// Visible badge for the lead lists/cards/panel. Empty string if free / mine.
+function renderClaimBadge(lead) {
+  const other = claimedByOther(lead);
+  if (other) {
+    return '<div class="claim-badge live"><span class="live-dot"></span> ' + escapeHtml(other) + ' is on this</div>';
+  }
+  // Stale prior claim by someone else — soft "last touched" hint, non-blocking.
+  if (lead && lead.claimedBy && lead.claimedBy !== getCurrentUser() && !isClaimActive(lead)) {
+    return '<div class="claim-badge"><i data-lucide="hand" aria-hidden="true"></i> Last claimed by ' + escapeHtml(lead.claimedBy) + '</div>';
+  }
+  return '';
+}
+// Open the dialer for a lead, claiming it first and warning if someone else is live on it.
+function openDialer(id) {
+  const lead = getLeadById(id);
+  if (!lead) return;
+  const other = claimedByOther(lead);
+  if (other) {
+    if (!confirm(other + ' is already calling this lead. Open anyway?')) return;
+  }
+  claimLead(lead);
+  const phone = (lead.phones && lead.phones[0] && lead.phones[0].number) ||
+                (lead.contacts && lead.contacts.find(c => c.phone) || {}).phone || '';
+  if (phone) {
+    window.location.href = 'tel:' + phone.replace(/[^+0-9]/g, '');
+  } else {
+    showToast('No phone number on this lead', 'warning');
+  }
+  if (typeof renderAll === 'function') renderAll();
+}
+// ===== CALL OUTCOME LOGGING (synced activity + last-contact stamp) =====
+const CALL_OUTCOMES = [
+  { value: 'connected', label: 'Connected – spoke to contact' },
+  { value: 'gatekeeper', label: 'Reached gatekeeper' },
+  { value: 'voicemail', label: 'Left voicemail' },
+  { value: 'no_answer', label: 'No answer' },
+  { value: 'callback', label: 'Asked to call back' },
+  { value: 'wrong_number', label: 'Wrong / dead number' },
+  { value: 'not_interested', label: 'Not interested' }
+];
+function callOutcomeLabel(v) { return (CALL_OUTCOMES.find(o => o.value === v) || {}).label || v; }
+// Logs a call attempt + its disposition as a synced activity entry and stamps last-contact.
+function logCall(id, outcome) {
+  const lead = getLeadById(id);
+  if (!lead || !outcome) return;
+  if (!lead.crm) lead.crm = {};
+  lead.crm.dateLastContact = todayISO;
+  if (!lead.crm.dateFirstContact) lead.crm.dateFirstContact = todayISO;
+  addActivity(lead, 'logged call (' + callOutcomeLabel(outcome) + ')');
+  // Calling is the most important rep action — also release the active-call lock.
+  if (typeof releaseLead === 'function') releaseLead(lead);
+  saveState();
 }
 function renderAttribution(lead) {
   let parts = [];
@@ -1632,12 +1800,29 @@ function reactivateLead(id) {
 }
 function deleteLead(id) {
   state.leads = state.leads.filter(l => l.id !== id);
+  // Register the intentional deletion so the sync layer removes it from the cloud too.
+  try { CrescendoSync.queueDelete(id); } catch (_) {}
   saveState();
 }
 
 // ========== LOCALSTORAGE PERSISTENCE ==========
 // saveState persists any state mutation. Called after EVERY write path.
 function saveState() {
+  // Stamp a sync timestamp on every lead at the single write chokepoint, so the
+  // per-lead merge engine can always tell which side (local vs remote) is newer.
+  // __applyingRemote guard: don't re-stamp leads we're currently applying FROM remote.
+  try {
+    if (!(window.CrescendoSync && CrescendoSync.__applyingRemote)) {
+      const __now = new Date().toISOString();
+      const __by = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'Unknown';
+      if (Array.isArray(state.leads)) {
+        for (const __l of state.leads) {
+          if (__l && __l.id && !__l.__remoteStamped) { __l._modAt = __now; __l._modBy = __by; }
+          if (__l) delete __l.__remoteStamped;
+        }
+      }
+    }
+  } catch (_) { /* stamping is best-effort */ }
   try {
     localStorage.setItem('crescendo-leads', JSON.stringify(state.leads));
     localStorage.setItem('crescendo-filters', JSON.stringify(state.filters));
@@ -1832,9 +2017,11 @@ function renderSidebarBadges() {
   if (overdueInCRM > 0) {
     crmBadge.textContent = crmCount;
     crmBadge.className = 'nav-badge nav-badge-warning';
+    crmBadge.title = overdueInCRM + ' overdue follow-up' + (overdueInCRM !== 1 ? 's' : '');
   } else {
     crmBadge.textContent = crmCount;
     crmBadge.className = 'nav-badge nav-badge-teal';
+    crmBadge.title = crmCount + ' lead' + (crmCount !== 1 ? 's' : '') + ' in CRM';
   }
   document.getElementById('badge-meetings').textContent = meetCount;
   document.getElementById('badge-archive').textContent = archCount;
@@ -2075,6 +2262,7 @@ function renderLeadBank() {
         <option value="all"${f.assignedTo==='all'?' selected':''}>All Consultants</option>
         ${CONSULTANTS.map(c => `<option value="${c}"${f.assignedTo===c?' selected':''}>${c}</option>`).join('')}
       </select>
+      <button class="today-chip${f.assignedTo === getCurrentUser() ? ' active' : ''}" data-filter="lb-mine" aria-pressed="${f.assignedTo === getCurrentUser()}"><i data-lucide="user-check" aria-hidden="true"></i> Mine</button>
       <button class="today-chip${f.today ? ' active' : ''}" data-action="toggle-today-filter" data-scope="lead-bank" aria-pressed="${!!f.today}"><i data-lucide="calendar-clock" aria-hidden="true"></i> Today</button>
       <select class="form-select" data-filter="lb-sort" aria-label="Sort leads">
         <option value="date"${(state.filters.leadBank.sort||'date')==='date'?' selected':''}>Sort by Date</option>
@@ -2145,11 +2333,13 @@ function renderLeadBank() {
             <span><i data-lucide="clock" aria-hidden="true"></i> ${formatDate(l.dateAdded)}</span>
             ${l.source ? `<span class="badge badge-neutral">${sourceLabel(l.source)}</span>` : ''}
           </div>
-          ${l.assignedTo ? `<div class="assigned-badge"><i data-lucide="user" aria-hidden="true"></i> Assigned: ${escapeHtml(l.assignedTo)}</div>` : ''}
+          ${l.assignedTo ? `<div class="assigned-badge"><i data-lucide="user" aria-hidden="true"></i> ${escapeHtml(l.assignedTo) === getCurrentUser() ? 'You' : 'Assigned: ' + escapeHtml(l.assignedTo)}</div>` : '<div class="assigned-badge" style="color:var(--color-warning);"><i data-lucide="user-plus" aria-hidden="true"></i> Unclaimed</div>'}
+          ${renderClaimBadge(l)}
           ${renderAttribution(l)}
           ${renderLastActivity(l)}
           <div class="lead-card-actions">
             <button class="btn btn-ghost btn-sm" data-action="view-lead" data-id="${l.id}"><i data-lucide="eye" aria-hidden="true"></i> View</button>
+            ${(l.phones && l.phones.length) ? `<button class="btn btn-sm" style="background:var(--color-primary);color:white" data-action="call-lead" data-id="${l.id}"><i data-lucide="phone" aria-hidden="true"></i> Call</button>` : ''}
             ${l.status === 'unqualified' ? `<button class="btn btn-primary btn-sm" data-action="qualify" data-id="${l.id}"><i data-lucide="check-circle" aria-hidden="true"></i> Qualify</button>` : ''}
             ${l.status === 'qualified' ? `<button class="btn btn-sm" style="background:var(--color-blue);color:white" data-action="move-to-crm" data-id="${l.id}"><i data-lucide="arrow-right" aria-hidden="true"></i> Move to CRM</button>` : ''}
           </div>
@@ -2246,7 +2436,8 @@ function renderViewLeadPanel(lead) {
     ${lead.description ? `<p style="font-size:var(--text-sm);color:var(--color-text-muted);margin-bottom:var(--space-5);line-height:1.6;">${escapeHtml(lead.description)}</p>` : ''}
     ${lead.website ? `<div class="form-group"><span class="form-label">Website</span><a href="${escapeHtml(lead.website)}" target="_blank" rel="noopener" style="font-size:var(--text-sm);color:var(--color-primary);word-break:break-all;">${escapeHtml(lead.website)}</a></div>` : ''}
     ${lead.address ? `<div class="form-group"><span class="form-label">Address</span><span style="font-size:var(--text-sm);">${escapeHtml(lead.address)}</span></div>` : ''}
-    ${lead.phones.length ? `<div class="form-group"><span class="form-label">Phone Numbers</span>${lead.phones.map(p => `<span style="font-size:var(--text-sm);">${escapeHtml(p.number)}</span>`).join('')}</div>` : ''}
+    ${renderClaimBadge(lead)}
+    ${lead.phones.length ? `<div class="form-group"><span class="form-label">Phone Numbers</span>${lead.phones.map(p => `<div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1);"><a href="tel:${escapeHtml(p.number.replace(/[^+0-9]/g,''))}" style="font-size:var(--text-sm);color:var(--color-primary);text-decoration:underline;text-underline-offset:2px;"><i data-lucide="phone" style="width:13px;height:13px;vertical-align:-2px;margin-right:3px;" aria-hidden="true"></i>${escapeHtml(p.number)}</a><button class="btn btn-ghost btn-sm" style="min-height:26px;padding:2px var(--space-2);font-size:var(--text-xs);" data-action="log-call" data-id="${lead.id}" data-num="${escapeHtml(p.number)}"><i data-lucide="phone-call" style="width:12px;height:12px;" aria-hidden="true"></i> Log call</button></div>`).join('')}</div>` : ''}
     ${lead.emails.length ? `<div class="form-group"><span class="form-label">Email Addresses</span>${lead.emails.map(e => `<span style="font-size:var(--text-sm);">${escapeHtml(e.address)}</span>`).join('')}</div>` : ''}
     ${lead.contacts.length ? `
       <div class="form-group">
@@ -2402,8 +2593,10 @@ function renderQualifiedLeads() {
             <span>${formatDate(q.dateQualified || l.dateAdded)}</span>
           </div>
           ${renderAttribution(l)}
+          ${renderClaimBadge(l)}
           ${renderLastActivity(l)}
           <div class="lead-card-actions">
+            ${(l.phones && l.phones.length) ? `<button class="btn btn-sm" style="background:var(--color-primary);color:white" data-action="call-lead" data-id="${l.id}"><i data-lucide="phone" aria-hidden="true"></i> Call</button>` : ''}
             <button class="btn btn-ghost btn-sm" data-action="view-qual" data-id="${l.id}"><i data-lucide="eye" aria-hidden="true"></i> View Full</button>
             ${l.status === 'qualified' ? `<button class="btn btn-primary btn-sm" data-action="move-to-crm" data-id="${l.id}"><i data-lucide="arrow-right" aria-hidden="true"></i> Move to CRM</button>` : ''}
           </div>
@@ -2646,9 +2839,12 @@ function renderCRMList(leads) {
           </div>
         </div>
         ${renderResearchChecklist(l)}
+        ${renderCallLogger(l)}
         ${renderAttribution(l)}
+        ${renderClaimBadge(l)}
         ${renderLastActivity(l)}
         <div class="crm-actions">
+          ${(l.phones && l.phones.length) ? `<button class="btn btn-sm" style="background:var(--color-primary);color:white" data-action="call-lead" data-id="${l.id}"><i data-lucide="phone" aria-hidden="true"></i> Call</button>` : ''}
           <button class="btn btn-ghost btn-sm btn-generate-email" data-action="generate-email" data-id="${l.id}"><i data-lucide="mail" aria-hidden="true"></i> Generate Email</button>
           ${showBrief ? `<button class="btn btn-secondary btn-sm" data-action="generate-brief" data-id="${l.id}"><i data-lucide="clipboard-list" aria-hidden="true"></i> Generate Brief</button>` : ''}
           <button class="btn btn-ghost btn-sm" data-action="archive-lead" data-id="${l.id}" data-disposition="archived"><i data-lucide="archive" aria-hidden="true"></i> Archive</button>
@@ -2659,6 +2855,22 @@ function renderCRMList(leads) {
   });
   html += '</div>';
   return html;
+}
+
+function renderCallLogger(lead) {
+  const primaryPhone = (lead.phones && lead.phones[0] && lead.phones[0].number) || (lead.contacts && (lead.contacts.find(c => c.phone) || {}).phone) || '';
+  return `
+    <div class="call-logger">
+      <div class="call-logger-head">
+        <i data-lucide="phone" aria-hidden="true"></i>
+        <span>Log a call</span>
+        ${primaryPhone ? `<a class="call-dial-link" href="tel:${escapeHtml(primaryPhone.replace(/\s+/g,''))}">${escapeHtml(primaryPhone)}</a>` : '<span class="call-no-phone">No phone on file</span>'}
+      </div>
+      <select class="form-select call-outcome-select" data-action="log-call" data-id="${lead.id}" aria-label="Log call outcome">
+        <option value="" selected>Record call outcome…</option>
+        ${CALL_OUTCOMES.map(o => `<option value="${o.value}">${o.label}</option>`).join('')}
+      </select>
+    </div>`;
 }
 
 const RESEARCH_ITEMS = [
@@ -3654,6 +3866,7 @@ document.getElementById('section-lead-bank').addEventListener('click', e => {
   const id = target.dataset.id;
 
   if (action === 'open-add-lead') openPanel('add-lead');
+  else if (action === 'call-lead') openDialer(id);
   else if (action === 'view-lead') openPanel('view-lead', getLeadById(id));
   else if (action === 'qualify') openModal('qualify', getLeadById(id));
   else if (action === 'move-to-crm') {
@@ -3702,6 +3915,13 @@ document.getElementById('section-lead-bank').addEventListener('change', e => {
   if (f === 'lb-sort') { state.filters.leadBank.sort = e.target.value; saveState(); renderLeadBank(); }
   if (f === 'lb-show-all') { state.filters.leadBank.assignedTo = e.target.checked ? 'all' : getCurrentUser(); saveState(); renderLeadBank(); }
 });
+document.getElementById('section-lead-bank').addEventListener('click', e => {
+  const chip = e.target.closest('[data-filter="lb-mine"]');
+  if (!chip) return;
+  state.filters.leadBank.assignedTo = (state.filters.leadBank.assignedTo === getCurrentUser()) ? 'all' : getCurrentUser();
+  saveState();
+  renderLeadBank();
+});
 
 // Qualified Leads events
 document.getElementById('section-qualified-leads').addEventListener('click', e => {
@@ -3711,6 +3931,7 @@ document.getElementById('section-qualified-leads').addEventListener('click', e =
   const id = target.dataset.id;
 
   if (action === 'qualify') openModal('qualify', getLeadById(id));
+  else if (action === 'call-lead') openDialer(id);
   else if (action === 'move-to-crm') {
     moveToCRM(id);
     showToast('Lead moved to CRM', 'success');
@@ -3727,6 +3948,7 @@ document.getElementById('section-crm').addEventListener('click', e => {
   const action = target.dataset.action;
   const id = target.dataset.id;
 
+  if (action === 'call-lead') { openDialer(id); return; }
   if (action === 'generate-email') {
     const lead = getLeadById(id);
     if (lead) openModal('email', lead);
@@ -3757,6 +3979,7 @@ document.getElementById('section-crm').addEventListener('click', e => {
       if (lead.crm.meetingBooked && !lead.crm.meetingDate) {
         lead.crm.meetingDate = dateTimeFromNow(7, 10, 0);
       }
+      addActivity(lead, lead.crm.meetingBooked ? 'booked a meeting' : 'cancelled meeting');
       saveState();
       renderCRM();
       renderSidebarBadges();
@@ -3809,6 +4032,15 @@ document.getElementById('section-crm').addEventListener('click', e => {
   }
 });
 document.getElementById('section-crm').addEventListener('change', e => {
+  if (e.target.dataset.action === 'log-call') {
+    const outcome = e.target.value;
+    if (outcome) {
+      logCall(e.target.dataset.id, outcome);
+      showToast('Call logged: ' + callOutcomeLabel(outcome), 'success');
+      renderCRM();
+    }
+    return;
+  }
   const action = e.target.dataset.action;
   const id = e.target.dataset.id;
   const f = e.target.dataset.filter;
@@ -3845,6 +4077,7 @@ document.getElementById('section-crm').addEventListener('change', e => {
         openOutcomeReasonModal(id, newDisp);
       } else {
         lead.crm.disposition = newDisp;
+        addActivity(lead, 'set disposition to ' + getDispositionLabel(newDisp));
         saveState();
       }
     }
@@ -4108,6 +4341,18 @@ document.getElementById('side-panel').addEventListener('click', e => {
   const action = target.dataset.action;
 
   if (action === 'close-panel') closePanel();
+  else if (action === 'call-lead') openDialer(target.dataset.id);
+  else if (action === 'log-call') {
+    const lead = getLeadById(target.dataset.id);
+    if (lead) {
+      const num = target.dataset.num || '';
+      addActivity(lead, 'logged a call' + (num ? ' to ' + num : ''));
+      if (typeof releaseLead === 'function') releaseLead(lead);
+      saveState();
+      renderAll();
+      showToast('Call logged on ' + lead.businessName, 'success');
+    }
+  }
   else if (action === 'add-phone') addDynamicItem('phones-list', 'phone');
   else if (action === 'add-email') addDynamicItem('emails-list', 'email');
   else if (action === 'add-contact') addDynamicContact();
@@ -4272,7 +4517,11 @@ document.getElementById('login-btn').addEventListener('click', () => {
     }
     name = 'Master';
   } else if (select.value === '__other__') {
-    name = document.getElementById('login-custom-input').value.trim();
+    // Canonicalize: collapse onto an existing rep if the typed name already exists.
+    name = resolveRepName(document.getElementById('login-custom-input').value);
+    if (!name) return;
+    // Remember genuinely-new reps so they appear in the picker next time.
+    addCustomRep(name);
   } else {
     name = select.value;
   }
@@ -4298,9 +4547,12 @@ document.getElementById('switch-user-btn').addEventListener('click', () => {
 const AM_TEAM_MEMBERS = ['Ayoub Rasol', 'Melusi Ndoro', 'Joshua Khalili', 'Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj'];
 const AM_ACTION_TYPES = [
   { value: 'all', label: 'All Actions' },
+  { value: 'call', label: 'Calls' },
   { value: 'qualified', label: 'Qualified' },
   { value: 'moved to CRM', label: 'Moved to CRM' },
   { value: 'note', label: 'Note Added' },
+  { value: 'disposition', label: 'Disposition' },
+  { value: 'meeting', label: 'Meeting' },
   { value: 'stage', label: 'Stage Changed' },
   { value: 'archived', label: 'Archived' },
   { value: 'reactivated', label: 'Reactivated' }
@@ -4311,7 +4563,7 @@ function getAllActivities() {
   state.leads.forEach(lead => {
     if (!lead.activity) return;
     lead.activity.forEach(a => {
-      activities.push({ ...a, leadName: lead.name, leadId: lead.id, leadStatus: lead.status });
+      activities.push({ ...a, leadName: lead.businessName, leadId: lead.id, leadStatus: lead.status });
     });
   });
   activities.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -4337,6 +4589,10 @@ function formatActivityTime(isoDate) {
 
 function describeAction(action) {
   const a = action.toLowerCase();
+  if (a.includes('logged call') || a.includes('logged a call') || a.startsWith('called')) return action;
+  if (a.includes('disposition')) return action;
+  if (a.includes('meeting')) return action;
+  if (a.includes('started working')) return action;
   if (a.includes('qualified')) return 'qualified';
   if (a.includes('moved to crm') || a.includes('crm')) return 'moved to CRM';
   if (a.includes('note') || a.includes('added note')) return 'added a note';
@@ -4350,8 +4606,11 @@ function matchesActionFilter(action, filter) {
   if (filter === 'all') return true;
   const a = action.toLowerCase();
   switch (filter) {
+    case 'call': return a.includes('logged call') || a.includes('logged a call') || a.startsWith('called');
+    case 'disposition': return a.includes('disposition');
+    case 'meeting': return a.includes('meeting');
     case 'qualified': return a.includes('qualified');
-    case 'moved to CRM': return a.includes('moved to crm') || a.includes('crm');
+    case 'moved to CRM': return (a.includes('moved to crm') || a.includes('crm')) && !a.includes('logged call');
     case 'note': return a.includes('note');
     case 'stage': return a.includes('stage');
     case 'archived': return a.includes('archived') || a.includes('archive');
@@ -4362,6 +4621,9 @@ function matchesActionFilter(action, filter) {
 
 function getActionBadgeClass(action) {
   const a = action.toLowerCase();
+  if (a.includes('logged call') || a.includes('logged a call') || a.startsWith('called')) return 'badge-orange';
+  if (a.includes('meeting')) return 'badge-purple';
+  if (a.includes('disposition')) return 'badge-blue';
   if (a.includes('qualified')) return 'badge-teal';
   if (a.includes('crm')) return 'badge-blue';
   if (a.includes('note')) return 'badge-neutral';
@@ -4407,6 +4669,10 @@ function renderActivityMonitor() {
   // Stats
   const totalActions = allActivities.length;
   const actionsToday = allActivities.filter(a => new Date(a.date) >= startOfToday).length;
+  const isCall = (a) => { const t = a.action.toLowerCase(); return t.includes('logged call') || t.includes('logged a call') || t.startsWith('called'); };
+  const callsToday = allActivities.filter(a => isCall(a) && new Date(a.date) >= startOfToday).length;
+  const callsTodayByUser = {};
+  allActivities.forEach(a => { if (isCall(a) && new Date(a.date) >= startOfToday) callsTodayByUser[a.by] = (callsTodayByUser[a.by] || 0) + 1; });
   const userCounts = {};
   allActivities.forEach(a => { userCounts[a.by] = (userCounts[a.by] || 0) + 1; });
   const mostActive = Object.entries(userCounts).sort((a, b) => b[1] - a[1])[0];
@@ -4447,11 +4713,13 @@ function renderActivityMonitor() {
   uniqueBreakdownUsers.forEach(user => {
     const count = filteredUserCounts[user] || 0;
     const pct = maxCount > 0 ? Math.round((count / maxCount) * 100) : 0;
+    const callsTodayCount = callsTodayByUser[user] || 0;
     breakdownHTML += `
       <div class="am-user-row">
         <div class="am-user-name">${escapeHtml(user)}</div>
         <div class="am-user-bar-wrap"><div class="am-user-bar" style="width:${pct}%"></div></div>
         <div class="am-user-count">${count}</div>
+        <div class="am-user-calls" title="Calls logged today">${callsTodayCount} 📞</div>
       </div>`;
   });
 
@@ -4469,6 +4737,10 @@ function renderActivityMonitor() {
       <div class="am-stat-card">
         <div class="am-stat-label">Actions Today</div>
         <div class="am-stat-value">${actionsToday}</div>
+      </div>
+      <div class="am-stat-card">
+        <div class="am-stat-label">Calls Today</div>
+        <div class="am-stat-value">${callsToday}</div>
       </div>
       <div class="am-stat-card">
         <div class="am-stat-label">Most Active User</div>
@@ -5818,6 +6090,9 @@ function init() {
     const user = getCurrentUser();
     document.getElementById('current-user-display').textContent = user;
     hideLoginOverlay();
+  } else if (typeof rebuildLoginRepOptions === 'function') {
+    // Not logged in: the overlay is visible by default — populate the rep picker now.
+    rebuildLoginRepOptions();
   }
   updateMasterUI();
   renderResetButton();
@@ -5841,18 +6116,50 @@ async function startSharedSync() {
       CrescendoSync.showSyncStatus('offline');
       return;
     }
-    CrescendoSync.subscribe(remoteLeads => {
-      // Remote snapshot wins; this makes the Master view reflect everyone's work live.
-      state.leads = remoteLeads;
-      // Persist locally too so offline reloads keep the latest data.
-      try { localStorage.setItem('crescendo-leads', JSON.stringify(state.leads)); } catch (_) {}
+    CrescendoSync.subscribe((remoteLeads, meta) => {
+      meta = meta || {};
+      // SAFE PER-LEAD MERGE: union of local + remote by id, keeping whichever copy has
+      // the newer _modAt (ISO string compare; missing/empty _modAt is treated as oldest).
+      // This never clobbers a local edit the rep just made that hasn't pushed yet.
+      const byId = new Map();
+      const localList = Array.isArray(state.leads) ? state.leads : [];
+      for (const l of localList) { if (l && l.id) byId.set(l.id, l); }
+      for (const r of remoteLeads) {
+        if (!r || !r.id) continue;
+        const local = byId.get(r.id);
+        if (!local) { r.__remoteStamped = true; byId.set(r.id, r); continue; }
+        const rAt = (typeof r._modAt === 'string') ? r._modAt : '';
+        const lAt = (typeof local._modAt === 'string') ? local._modAt : '';
+        // Remote wins only if it is strictly newer than the local copy.
+        if (rAt > lAt) { r.__remoteStamped = true; byId.set(r.id, r); }
+        // else keep local (an unpushed newer edit, or a tie) and let it push on next saveState.
+      }
+      // Surface the first-snapshot empty-cloud signal to the deferred seed-push gate.
+      if (meta.firstSnapshot) { CrescendoSync.__cloudKnownEmpty = !!meta.cloudEmpty; }
+      // Drop the fictional sample leads once real cloud data is present.
+      let merged = Array.from(byId.values());
+      if (remoteLeads.length > 0) merged = merged.filter(l => l && l.source !== 'sample');
+      state.leads = merged;
+      // __applyingRemote so saveState below doesn't re-stamp the just-merged remote leads.
+      CrescendoSync.__applyingRemote = true;
+      try {
+        try { localStorage.setItem('crescendo-leads', JSON.stringify(state.leads)); } catch (_) {}
+        // Push back any local-only or locally-newer leads the merge kept (real leads only).
+        if (typeof CrescendoSync.pushLeads === 'function') CrescendoSync.pushLeads(state.leads);
+      } finally { CrescendoSync.__applyingRemote = false; }
+      // Clear the per-merge stamp markers now that this snapshot is fully applied.
+      for (const l of state.leads) { if (l) delete l.__remoteStamped; }
       if (typeof renderAll === 'function') renderAll();
     });
-    // First-time seed-push: if we already had local leads but nothing in the cloud yet,
-    // kick a push so the Master immediately sees what's local.
-    if (Array.isArray(state.leads) && state.leads.length > 0) {
-      CrescendoSync.pushLeads(state.leads);
-    }
+    // First-EVER seed-push: only when the cloud is genuinely empty (fresh setup) AND our
+    // local leads are real (not the fictional samples). Never push over existing cloud data.
+    setTimeout(() => {
+      if (!CrescendoSync.__cloudSeeded && CrescendoSync.__cloudKnownEmpty &&
+          Array.isArray(state.leads) && state.leads.some(l => l && l.source !== 'sample')) {
+        CrescendoSync.__cloudSeeded = true;
+        CrescendoSync.pushLeads(state.leads.filter(l => l && l.source !== 'sample'));
+      }
+    }, 1500);
   } catch (e) {
     console.warn('startSharedSync failed', e);
   }
