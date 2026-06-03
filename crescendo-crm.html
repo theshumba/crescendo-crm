@@ -11,8 +11,8 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-  window.__fb = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch };
+  import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  window.__fb = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, runTransaction };
   window.dispatchEvent(new Event('fb-ready'));
 </script>
 <!--
@@ -236,6 +236,7 @@ ul, ol { list-style: none; }
 .btn-danger-ghost { background: transparent; color: var(--color-error); }
 .btn-danger-ghost:hover { background: var(--color-error-highlight); }
 .btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--text-xs); min-height: 32px; }
+@media (pointer: coarse) { .btn-sm { min-height: 44px; } .call-logger .form-select.call-outcome-select { min-height: 44px; } }
 .btn i { width: 16px; height: 16px; }
 
 /* ========== BADGES ========== */
@@ -986,9 +987,14 @@ const CrescendoSync = (function () {
   let ready = false;
   let unsubscribeLeads = null;
   let applyingRemote = false;       // guard so onSnapshot callbacks don't re-push writes
-  let lastPushed = new Map();       // leadId -> JSON string of last-pushed lead
+  let lastPushed = new Map();       // leadId -> JSON string of last-pushed lead (echo key)
   let pushTimer = null;
   let pendingPush = false;
+  let lastLeads = null;            // latest leads array handed to pushLeads (for flush())
+  // Echo-dedup key: the lead minus volatile server-side fields. _srvAt is a serverTimestamp
+  // sentinel on write but a resolved Timestamp on read, so it must be stripped from the key
+  // or every push would look "changed" and loop forever (M1 safety).
+  function _echoKey(lead) { const o = { ...lead }; delete o._srvAt; return o; }
   let onRemoteCb = null;
   let firstSnapshotSeen = false;    // becomes true after the first remote snapshot arrives
   let cloudWasEmpty = false;        // true only if that first snapshot had ZERO docs
@@ -1017,6 +1023,7 @@ const CrescendoSync = (function () {
       db = window.__fb.getFirestore(app);
       await window.__fb.signInAnonymously(auth);
       ready = true;
+      CrescendoSync.__db = db; // expose for the L1 create-if-absent seed transaction
       console.info('[CrescendoSync] Connected. Data will sync across all devices.');
       showSyncStatus('connected');
       return true;
@@ -1043,11 +1050,17 @@ const CrescendoSync = (function () {
           if (modAt && typeof modAt.toDate === 'function') { try { modAt = modAt.toDate().toISOString(); } catch (_) { modAt = ''; } }
           const lead = { ...raw };
           lead._modAt = (typeof modAt === 'string') ? modAt : '';
-          // Keep _modAt/_modBy ON the lead so the app-level merge can compare versions.
+          // Normalise the server timestamp (M1): _srvAt is written as serverTimestamp() and
+          // comes back as a Firestore Timestamp — convert to ISO so the merge can order by it.
+          let srvAt = raw._srvAt;
+          if (srvAt && typeof srvAt.toDate === 'function') { try { srvAt = srvAt.toDate().toISOString(); } catch (_) { srvAt = ''; } }
+          lead._srvAt = (typeof srvAt === 'string') ? srvAt : '';
+          // Keep _modAt/_modBy/_srvAt ON the lead so the app-level merge can compare versions.
           remoteLeads.push(lead);
-          // lastPushed ledger stores the exact serialization we'd re-push, so identical
-          // remote echoes are skipped by pushLeads (prevents push/snapshot loops).
-          lastPushed.set(lead.id, JSON.stringify({ ...lead }));
+          // lastPushed ledger stores the serialization we'd re-push, so identical remote
+          // echoes are skipped by pushLeads (prevents push/snapshot loops). _srvAt is volatile
+          // (sentinel on write, Timestamp on read) so it MUST be excluded from the echo key.
+          lastPushed.set(lead.id, JSON.stringify(_echoKey(lead)));
         });
         // Record cloud-empty state exactly once, on the very first snapshot.
         if (!firstSnapshotSeen) { cloudWasEmpty = (remoteLeads.length === 0); }
@@ -1066,6 +1079,7 @@ const CrescendoSync = (function () {
   function pushLeads(leads) {
     if (!ready || !db) return;
     if (applyingRemote) return; // don't echo remote writes back
+    lastLeads = leads; // remember the latest list so flush() can commit it synchronously (H1)
     pendingPush = true;
     if (pushTimer) return;
     pushTimer = setTimeout(async () => {
@@ -1073,36 +1087,54 @@ const CrescendoSync = (function () {
       if (!pendingPush) return;
       pendingPush = false;
       try {
-        const batch = window.__fb.writeBatch(db);
         const currentIds = new Set();
-        const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'Unknown';
+        const __rawUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'Unknown';
+        // L5: canonicalise the writer so attribution can't split across name variants.
+        const user = (typeof resolveRepName === 'function') ? resolveRepName(__rawUser) : __rawUser;
+        // Collect write operations first, then commit in <=450-op chunks. A writeBatch caps
+        // at 500 ops; with ~540 leads a single batch throws "too large" and the whole push
+        // (including the real claim) fails. Chunking is the hard-break safety net (H2).
+        const ops = [];
         for (const lead of leads) {
           if (!lead || !lead.id) continue;
           currentIds.add(lead.id);
           // Never push the fictional demo/sample leads into the production cloud.
           if (lead.source === 'sample') continue;
+          // Never push soft-deleted leads as live data (H3).
+          if (lead._deleted) continue;
           // Stamp _modAt as an ISO string (app-level, survives the round-trip for merge ordering).
           // Prefer the lead's own _modAt (set by saveState at write time); fall back to now.
           const stampedAt = (typeof lead._modAt === 'string' && lead._modAt) ? lead._modAt : new Date().toISOString();
           const stampedBy = lead._modBy || user;
-          const payload = { ...lead, _modBy: stampedBy, _modAt: stampedAt };
-          const serialized = JSON.stringify(payload);
-          if (lastPushed.get(lead.id) === serialized) continue; // unchanged — skip echo
+          // _srvAt: authoritative server clock written every push; merge prefers it over the
+          // device wall-clock _modAt when both sides have it (M1). Volatile — see _echoKey.
+          const payload = { ...lead, _modBy: stampedBy, _modAt: stampedAt, _srvAt: window.__fb.serverTimestamp() };
+          const echo = JSON.stringify(_echoKey(payload));
+          if (lastPushed.get(lead.id) === echo) continue; // unchanged — skip echo (H2)
           const ref = window.__fb.doc(db, 'leads', String(lead.id));
-          batch.set(ref, payload);
-          lastPushed.set(lead.id, serialized);
+          ops.push({ ref: ref, payload: payload });
+          lastPushed.set(lead.id, echo);
         }
         // Deletions are SCOPED to ids the app explicitly deleted — never inferred from a
-        // partial/stale local list. This prevents mass-deletion of the cloud leads.
+        // partial/stale local list. Soft-delete TOMBSTONE (H3): write {_deleted:true,...} via
+        // set instead of a hard delete, so every other rep's merge can DROP the lead rather
+        // than resurrect it (a pure-union merge can't see a missing doc).
         for (const id of Array.from(pendingDeletes)) {
           if (!currentIds.has(id)) {
             const ref = window.__fb.doc(db, 'leads', String(id));
-            batch.delete(ref);
+            const tomb = { id: String(id), _deleted: true, _modAt: new Date().toISOString(), _modBy: user, _srvAt: window.__fb.serverTimestamp() };
+            ops.push({ ref: ref, payload: tomb });
             lastPushed.delete(id);
           }
           pendingDeletes.delete(id);
         }
-        await batch.commit();
+        // Commit in chunks of <=450 ops (safely under the 500-op writeBatch ceiling).
+        const CHUNK = 450;
+        for (let i = 0; i < ops.length; i += CHUNK) {
+          const batch = window.__fb.writeBatch(db);
+          for (const op of ops.slice(i, i + CHUNK)) batch.set(op.ref, op.payload);
+          await batch.commit();
+        }
         showSyncStatus('connected');
       } catch (e) {
         console.warn('[CrescendoSync] Push failed:', e);
@@ -1111,12 +1143,65 @@ const CrescendoSync = (function () {
     }, 400);
   }
 
+  // Commit any pending push RIGHT NOW (synchronously kicks off batch.commit), bypassing the
+  // 400ms debounce. Used before tel: navigation so a claim write isn't dropped when the phone
+  // suspends the page. Returns a Promise; never rejects (errors surface via showSyncStatus).
+  function flush() {
+    if (!ready || !db) return Promise.resolve();
+    if (applyingRemote) return Promise.resolve();
+    if (pushTimer) { clearTimeout(pushTimer); pushTimer = null; }
+    if (!pendingPush) return Promise.resolve();
+    pendingPush = false;
+    const leads = Array.isArray(lastLeads) ? lastLeads : [];
+    return (async () => {
+      try {
+        const currentIds = new Set();
+        const __rawUser = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'Unknown';
+        const user = (typeof resolveRepName === 'function') ? resolveRepName(__rawUser) : __rawUser;
+        const ops = [];
+        for (const lead of leads) {
+          if (!lead || !lead.id) continue;
+          currentIds.add(lead.id);
+          if (lead.source === 'sample') continue;
+          if (lead._deleted) continue;
+          const stampedAt = (typeof lead._modAt === 'string' && lead._modAt) ? lead._modAt : new Date().toISOString();
+          const stampedBy = lead._modBy || user;
+          const payload = { ...lead, _modBy: stampedBy, _modAt: stampedAt, _srvAt: window.__fb.serverTimestamp() };
+          const echo = JSON.stringify(_echoKey(payload));
+          if (lastPushed.get(lead.id) === echo) continue;
+          const ref = window.__fb.doc(db, 'leads', String(lead.id));
+          ops.push({ ref: ref, payload: payload });
+          lastPushed.set(lead.id, echo);
+        }
+        for (const id of Array.from(pendingDeletes)) {
+          if (!currentIds.has(id)) {
+            const ref = window.__fb.doc(db, 'leads', String(id));
+            const tomb = { id: String(id), _deleted: true, _modAt: new Date().toISOString(), _modBy: user, _srvAt: window.__fb.serverTimestamp() };
+            ops.push({ ref: ref, payload: tomb });
+            lastPushed.delete(id);
+          }
+          pendingDeletes.delete(id);
+        }
+        const CHUNK = 450;
+        for (let i = 0; i < ops.length; i += CHUNK) {
+          const batch = window.__fb.writeBatch(db);
+          for (const op of ops.slice(i, i + CHUNK)) batch.set(op.ref, op.payload);
+          await batch.commit();
+        }
+        showSyncStatus('connected');
+      } catch (e) {
+        console.warn('[CrescendoSync] Flush failed:', e);
+        showSyncStatus('error', e.message || 'Flush failed');
+      }
+    })();
+  }
+
   function showSyncStatus(kind, msg) {
     let el = document.getElementById('sync-status-indicator');
     if (!el) {
       el = document.createElement('div');
       el.id = 'sync-status-indicator';
-      el.style.cssText = 'position:fixed;bottom:12px;right:12px;padding:6px 10px;border-radius:6px;font:500 12px system-ui,sans-serif;z-index:9999;pointer-events:auto;opacity:0.9;cursor:default;';
+      el.style.cssText = 'position:fixed;right:var(--space-3);bottom:calc(var(--space-6) + 66px);padding:6px 10px;border-radius:6px;font:500 12px system-ui,sans-serif;z-index:401;pointer-events:none;opacity:0.92;cursor:default;';
       document.body && document.body.appendChild(el);
     }
     if (!el.parentNode && document.body) document.body.appendChild(el);
@@ -1124,24 +1209,24 @@ const CrescendoSync = (function () {
     if (kind === 'connected') {
       el.textContent = who ? ('● Synced as ' + who) : '● Synced';
       el.title = 'Live: your work is shared with the team in real time.';
-      el.style.background = '#e6f7ec';
-      el.style.color = '#1a7a3a';
+      el.style.background = 'var(--color-success-highlight)';
+      el.style.color = 'var(--color-success)';
     } else if (kind === 'error') {
       el.textContent = '● Sync error' + (msg ? ': ' + msg : '');
       el.title = 'Could not reach the shared backend. Changes are saved locally and will retry.';
-      el.style.background = '#fdecea';
-      el.style.color = '#a12622';
+      el.style.background = 'var(--color-error-highlight)';
+      el.style.color = 'var(--color-error)';
     } else {
       el.textContent = '● Offline (local only)';
       el.title = 'Not connected to the shared backend — this device only.';
-      el.style.background = '#f1f2f4';
-      el.style.color = '#555';
+      el.style.background = 'var(--color-surface-offset)';
+      el.style.color = 'var(--color-text-muted)';
     }
   }
 
   // Mark a lead id for cloud deletion on the next push (explicit deletes only).
   function queueDelete(id) { if (id != null) pendingDeletes.add(String(id)); }
-  return { init, subscribe, pushLeads, isConfigured, showSyncStatus, queueDelete };
+  return { init, subscribe, pushLeads, flush, isConfigured, showSyncStatus, queueDelete };
 })();
 
 // ========== USER SESSION ==========
@@ -1186,6 +1271,14 @@ function isMasterUser() {
 }
 const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj'];
 const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol'];
+// True for the owner (Master) AND CEO roster logins, who share aggregate access.
+// Centralised so nav, redirect, and render gates can't drift apart (M5).
+function canViewActivityMonitor() {
+  return isMasterUser() || CEOS.includes(getCurrentUser());
+}
+// Reserved identity that may ONLY be assumed via the Master PIN gate. Free-typed
+// 'Master' (any case/spacing) must never resolve to the owner identity (C4).
+const RESERVED_MASTER_NAME = 'master';
 // Canonical roster of known reps. Custom reps added via the login picker are
 // persisted here so future logins pick the exact same spelling (no duplicates).
 function getCustomReps() {
@@ -1214,9 +1307,17 @@ function getKnownReps() {
 function resolveRepName(name) {
   const clean = String(name || '').replace(/\s+/g, ' ').trim();
   if (!clean) return clean;
-  if (clean === 'Master') return 'Master';
-  const match = getKnownReps().find(n => n.toLowerCase() === clean.toLowerCase());
-  return match || clean;
+  // SECURITY: 'Master' (any case) is NOT resolvable here — the owner identity may only be
+  // assumed through the PIN gate. Free-typed 'master' is treated as an ordinary (invalid)
+  // rep name so it can never grant owner powers (C4).
+  if (clean.toLowerCase() === RESERVED_MASTER_NAME) return clean;
+  // Precedence: canonical roster (CEOS then CONSULTANTS) ALWAYS wins over custom reps so a
+  // near-duplicate custom rep can never shadow/mis-canonicalise a CEO or consultant (M6).
+  const lc = clean.toLowerCase();
+  const canonical = [...CEOS, ...CONSULTANTS].find(n => n.toLowerCase() === lc);
+  if (canonical) return canonical;
+  const custom = getCustomReps().find(n => n.toLowerCase() === lc);
+  return custom || clean;
 }
 function canReassignLeads() {
   const u = getCurrentUser();
@@ -1239,9 +1340,10 @@ function applyConsultantDefaults() {
 }
 function updateMasterUI() {
   const navBtn = document.getElementById('nav-activity-monitor');
-  if (navBtn) navBtn.style.display = isMasterUser() ? '' : 'none';
-  // If non-master is on activity-monitor, redirect to home
-  if (!isMasterUser() && state.activeSection === 'activity-monitor') {
+  // CEO/owner logins share aggregate access, so they also get the Activity Monitor (M5).
+  if (navBtn) navBtn.style.display = canViewActivityMonitor() ? '' : 'none';
+  // If a user without aggregate access is on activity-monitor, redirect to home
+  if (!canViewActivityMonitor() && state.activeSection === 'activity-monitor') {
     showSection('home');
   }
   // Refresh export button access when role changes
@@ -1252,7 +1354,10 @@ function hideLoginOverlay() {
 }
 function addActivity(lead, action) {
   if (!lead.activity) lead.activity = [];
-  lead.activity.unshift({ action, by: getCurrentUser(), date: new Date().toISOString() });
+  // Normalise attribution to the canonical roster spelling at write time so one human never
+  // splits across near-duplicate spellings in the Activity Monitor (L5).
+  const by = resolveRepName(getCurrentUser());
+  lead.activity.unshift({ action, by, date: new Date().toISOString() });
 }
 // ===== LEAD CLAIM / DOUBLE-CALL PREVENTION =====
 // A claim is "active" for CLAIM_TTL_MS after activeCallAt; after that it is stale
@@ -1300,19 +1405,60 @@ function renderClaimBadge(lead) {
   }
   return '';
 }
+// Soft cooldown: warn if a DIFFERENT rep contacted this lead very recently, to avoid
+// re-dialing seconds after a 'no answer'. Non-blocking (confirm to proceed).
+const RECENT_CONTACT_COOLDOWN_MS = 4 * 60 * 1000;
+function recentlyContactedByOther(lead) {
+  const me = getCurrentUser();
+  let when = 0, who = '';
+  // Newest activity by someone else (activity[0] is the most recent — see renderLastActivity).
+  const acts = (lead && Array.isArray(lead.activity)) ? lead.activity : [];
+  for (const a of acts) {
+    if (!a || a.by === me || !a.date) continue;
+    const t = new Date(a.date).getTime();
+    if (!isNaN(t) && t > when) { when = t; who = a.by; }
+    break; // list is newest-first; the first other-user entry is the most recent
+  }
+  if (who && (Date.now() - when) < RECENT_CONTACT_COOLDOWN_MS) {
+    return { who: who, minsAgo: Math.max(1, Math.round((Date.now() - when) / 60000)) };
+  }
+  return null;
+}
 // Open the dialer for a lead, claiming it first and warning if someone else is live on it.
-function openDialer(id) {
+// `num` (optional) is the specific tapped number; otherwise we choose / prompt.
+function openDialer(id, num) {
   const lead = getLeadById(id);
   if (!lead) return;
   const other = claimedByOther(lead);
   if (other) {
     if (!confirm(other + ' is already calling this lead. Open anyway?')) return;
+  } else {
+    // No live claim, but guard against re-dialing right after another rep just tried.
+    const recent = recentlyContactedByOther(lead);
+    if (recent && !confirm('Recently contacted by ' + recent.who + ' (' + recent.minsAgo + ' min ago). Call anyway?')) return;
   }
   claimLead(lead);
-  const phone = (lead.phones && lead.phones[0] && lead.phones[0].number) ||
-                (lead.contacts && lead.contacts.find(c => c.phone) || {}).phone || '';
+  // Commit the claim NOW — tel: navigation suspends the page and would drop the debounced push (H1).
+  try { CrescendoSync.flush(); } catch (_) { /* best-effort; still dial below */ }
+  // Build the candidate number list (lead phones first, then a contact phone).
+  const nums = []
+    .concat((lead.phones || []).map(p => (p && p.number) || '').filter(Boolean))
+    .concat((lead.contacts || []).map(c => (c && c.phone) || '').filter(Boolean));
+  let phone = num || '';
+  if (!phone) {
+    if (nums.length > 1) {
+      // Multiple numbers: let the rep choose which one to dial (M10).
+      const choice = prompt('This lead has ' + nums.length + ' numbers. Type the line to call:\n' +
+        nums.map((n, i) => (i + 1) + '. ' + n).join('\n'), '1');
+      if (choice === null) { if (typeof renderAll === 'function') renderAll(); return; }
+      const idx = parseInt(choice, 10) - 1;
+      phone = (idx >= 0 && idx < nums.length) ? nums[idx] : nums[0];
+    } else {
+      phone = nums[0] || '';
+    }
+  }
   if (phone) {
-    window.location.href = 'tel:' + phone.replace(/[^+0-9]/g, '');
+    window.location.href = 'tel:' + String(phone).replace(/[^+0-9]/g, '');
   } else {
     showToast('No phone number on this lead', 'warning');
   }
@@ -1581,14 +1727,35 @@ state.leads = (Array.isArray(SEED_LEADS) && SEED_LEADS.length) ? SEED_LEADS.map(
 } // end loadState check
 loadPreferences();
 
-// Normalise lead shape so newly-added fields exist on legacy records
+// normalizeLead — single source of truth for lead shape. Imported/remote leads of unknown
+// shape are coerced here so every renderer/search/filter can assume fields and arrays exist.
+// Mutates and returns the lead. Idempotent — safe to call repeatedly (seed, loadState, merge).
+function normalizeLead(l) {
+  if (!l || typeof l !== 'object') return l;
+  if (typeof l.businessName !== 'string') l.businessName = l.businessName == null ? '' : String(l.businessName);
+  if (typeof l.description !== 'string') l.description = l.description == null ? '' : String(l.description);
+  if (typeof l.industry !== 'string') l.industry = l.industry == null ? '' : String(l.industry);
+  if (!Array.isArray(l.phones)) l.phones = [];
+  if (!Array.isArray(l.emails)) l.emails = [];
+  if (!Array.isArray(l.contacts)) l.contacts = [];
+  if (!Array.isArray(l.activity)) l.activity = [];
+  if (!Array.isArray(l.researchChecklist)) l.researchChecklist = [];
+  if (!l.source) l.source = 'manual';
+  if (!l.status) l.status = 'unqualified';
+  if (l.qualification === undefined) l.qualification = null;
+  if (l.crm === undefined) l.crm = null;
+  if (l.crm && typeof l.crm === 'object') {
+    if (!Array.isArray(l.crm.notes)) l.crm.notes = [];
+    if (!l.crm.priority) l.crm.priority = 'medium';
+    if (l.crm.disposition == null) l.crm.disposition = 'nurture';
+    if (l.crm.dealValue == null) l.crm.dealValue = 15000;
+    if (l.crm.outcomeReason == null) l.crm.outcomeReason = '';
+    if (typeof l.crm.stage !== 'number') l.crm.stage = Number(l.crm.stage) || 1;
+  }
+  return l;
+}
 (function normaliseLeads() {
-  state.leads.forEach(l => {
-    if (l.crm) {
-      if (l.crm.dealValue == null) l.crm.dealValue = 15000;
-      if (l.crm.outcomeReason == null) l.crm.outcomeReason = '';
-    }
-  });
+  if (Array.isArray(state.leads)) state.leads.forEach(l => normalizeLead(l));
 })();
 
 // ========== HELPERS ==========
@@ -1807,18 +1974,36 @@ function deleteLead(id) {
 
 // ========== LOCALSTORAGE PERSISTENCE ==========
 // saveState persists any state mutation. Called after EVERY write path.
+// Content hash of a lead EXCLUDING sync-bookkeeping fields, so we can tell which leads a given
+// saveState actually mutated. Re-stamping/pushing all ~540 leads every call blew the 500-op
+// batch limit and amplified writes ~540x (H2). We now stamp only the changed ones.
+const __leadHashes = new Map(); // id -> last-seen content hash (set on save & on remote merge)
+function __leadContentHash(l) {
+  const o = { ...l };
+  delete o._modAt; delete o._modBy; delete o._srvAt; delete o.__remoteStamped;
+  return JSON.stringify(o);
+}
 function saveState() {
-  // Stamp a sync timestamp on every lead at the single write chokepoint, so the
-  // per-lead merge engine can always tell which side (local vs remote) is newer.
-  // __applyingRemote guard: don't re-stamp leads we're currently applying FROM remote.
+  // Stamp the sync timestamp ONLY on leads whose content actually changed since the last
+  // save/merge, so the per-lead merge can tell which side is newer WITHOUT rewriting every
+  // lead. __applyingRemote guard: don't re-stamp leads we're currently applying FROM remote.
   try {
     if (!(window.CrescendoSync && CrescendoSync.__applyingRemote)) {
       const __now = new Date().toISOString();
-      const __by = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'Unknown';
+      // L5: canonicalise the writer so _modBy attribution can't split across name variants.
+      const __rawBy = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'Unknown';
+      const __by = (typeof resolveRepName === 'function') ? resolveRepName(__rawBy) : __rawBy;
       if (Array.isArray(state.leads)) {
         for (const __l of state.leads) {
-          if (__l && __l.id && !__l.__remoteStamped) { __l._modAt = __now; __l._modBy = __by; }
-          if (__l) delete __l.__remoteStamped;
+          if (!__l || !__l.id) continue;
+          if (__l.__remoteStamped) { delete __l.__remoteStamped; __leadHashes.set(__l.id, __leadContentHash(__l)); continue; }
+          const __h = __leadContentHash(__l);
+          if (__leadHashes.get(__l.id) !== __h) {
+            // Genuinely changed (or brand new) → stamp it as a local edit and remember the hash.
+            __l._modAt = __now; __l._modBy = __by;
+            __leadHashes.set(__l.id, __leadContentHash(__l));
+          }
+          // else: untouched — leave existing _modAt/_modBy so pushLeads skips it.
         }
       }
     }
@@ -1854,7 +2039,25 @@ function loadState() {
     if (saved !== null && saved !== undefined && saved !== '') {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        state.leads = parsed;
+        // Normalise shape first (C5/H5) so backfill + merge see well-formed leads.
+        state.leads = parsed.map(l => normalizeLead(l));
+        // OUTAGE-EDIT PROTECTION (C1): edits made while sync was down carry no _modAt. The
+        // merge treats empty _modAt as "oldest", so stale cloud copies would overwrite them on
+        // first reconnect. Backfill a current-ISO _modAt on every lead missing one and persist
+        // it BEFORE startSharedSync subscribes, so offline work wins the merge.
+        let __backfilled = false;
+        const __now = new Date().toISOString();
+        const __by = (typeof getCurrentUser === 'function') ? getCurrentUser() : 'Unknown';
+        for (const __l of state.leads) {
+          if (__l && __l.id && !(typeof __l._modAt === 'string' && __l._modAt)) {
+            __l._modAt = __now;
+            if (!__l._modBy) __l._modBy = __by;
+            __backfilled = true;
+          }
+        }
+        if (__backfilled) {
+          try { localStorage.setItem('crescendo-leads', JSON.stringify(state.leads)); } catch (_) {}
+        }
         return true;
       }
     }
@@ -3866,7 +4069,7 @@ document.getElementById('section-lead-bank').addEventListener('click', e => {
   const id = target.dataset.id;
 
   if (action === 'open-add-lead') openPanel('add-lead');
-  else if (action === 'call-lead') openDialer(id);
+  else if (action === 'call-lead') openDialer(id, target.dataset.num);
   else if (action === 'view-lead') openPanel('view-lead', getLeadById(id));
   else if (action === 'qualify') openModal('qualify', getLeadById(id));
   else if (action === 'move-to-crm') {
@@ -3931,7 +4134,7 @@ document.getElementById('section-qualified-leads').addEventListener('click', e =
   const id = target.dataset.id;
 
   if (action === 'qualify') openModal('qualify', getLeadById(id));
-  else if (action === 'call-lead') openDialer(id);
+  else if (action === 'call-lead') openDialer(id, target.dataset.num);
   else if (action === 'move-to-crm') {
     moveToCRM(id);
     showToast('Lead moved to CRM', 'success');
@@ -3948,7 +4151,7 @@ document.getElementById('section-crm').addEventListener('click', e => {
   const action = target.dataset.action;
   const id = target.dataset.id;
 
-  if (action === 'call-lead') { openDialer(id); return; }
+  if (action === 'call-lead') { openDialer(id, target.dataset.num); return; }
   if (action === 'generate-email') {
     const lead = getLeadById(id);
     if (lead) openModal('email', lead);
@@ -4341,7 +4544,7 @@ document.getElementById('side-panel').addEventListener('click', e => {
   const action = target.dataset.action;
 
   if (action === 'close-panel') closePanel();
-  else if (action === 'call-lead') openDialer(target.dataset.id);
+  else if (action === 'call-lead') openDialer(target.dataset.id, target.dataset.num);
   else if (action === 'log-call') {
     const lead = getLeadById(target.dataset.id);
     if (lead) {
@@ -4506,12 +4709,18 @@ document.getElementById('login-pin-input').addEventListener('input', e => {
 document.getElementById('login-pin-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('login-btn').click();
 });
+// NOTE (M4 — residual risk, NOT fully fixed client-side): this PIN is still shipped in
+// client JS, so a determined rep can view-source it or set the 'crescendo-crm-user'
+// localStorage key directly to assume Master. A real fix requires a Firebase auth identity +
+// Firestore Security Rules keyed to that uid. Until then this only stops the *trivial*
+// free-text 'Master' bypass (C4) and avoids re-printing the literal in multiple places.
+const MASTER_PIN = '786777';
 document.getElementById('login-btn').addEventListener('click', () => {
   const select = document.getElementById('login-team-select');
   let name;
   if (select.value === '__master__') {
     const pin = document.getElementById('login-pin-input').value;
-    if (pin !== '786777') {
+    if (pin !== MASTER_PIN) {
       document.getElementById('login-pin-error').style.display = 'block';
       return;
     }
@@ -4520,6 +4729,14 @@ document.getElementById('login-btn').addEventListener('click', () => {
     // Canonicalize: collapse onto an existing rep if the typed name already exists.
     name = resolveRepName(document.getElementById('login-custom-input').value);
     if (!name) return;
+    // SECURITY: the add-rep path must NEVER mint the owner identity. Reject any name that
+    // case-insensitively equals the reserved 'Master' sentinel — Master can only be assumed
+    // via the PIN branch above (C4).
+    if (name.toLowerCase() === RESERVED_MASTER_NAME) {
+      const err = document.getElementById('login-pin-error');
+      if (err) { err.textContent = 'That name is reserved. Use the Master Account option to sign in as owner.'; err.style.display = 'block'; }
+      return;
+    }
     // Remember genuinely-new reps so they appear in the picker next time.
     addCustomRep(name);
   } else {
@@ -4553,19 +4770,75 @@ const AM_ACTION_TYPES = [
   { value: 'note', label: 'Note Added' },
   { value: 'disposition', label: 'Disposition' },
   { value: 'meeting', label: 'Meeting' },
+  { value: 'won', label: 'Won' },
+  { value: 'reassigned', label: 'Reassigned' },
+  { value: 'started', label: 'Started Working' },
   { value: 'stage', label: 'Stage Changed' },
   { value: 'archived', label: 'Archived' },
   { value: 'reactivated', label: 'Reactivated' }
 ];
 
+// Family key used to dedupe synthesized historical entries against real logged activity[]
+// entries (same user + same kind of action + same calendar day).
+function activityFamily(action) {
+  const t = String(action || '').toLowerCase();
+  if (t.includes('logged call') || t.includes('logged a call') || t.startsWith('called')) return 'call';
+  if (t.includes('meeting')) return 'meeting';
+  if (t.includes('disposition')) return 'disposition';
+  if (t.includes('won')) return 'won';
+  if (t.includes('reassigned')) return 'reassigned';
+  if (t.includes('started working')) return 'started';
+  if (t.includes('qualified')) return 'qualified';
+  if (t.includes('moved to crm') || t.includes('crm')) return 'crm';
+  if (t.includes('note')) return 'note';
+  if (t.includes('stage')) return 'stage';
+  if (t.includes('archived') || t.includes('archive')) return 'archived';
+  if (t.includes('reactivated') || t.includes('reactivate')) return 'reactivated';
+  return t;
+}
+function dayKey(isoDate) {
+  const d = new Date(isoDate);
+  return isNaN(d) ? String(isoDate || '') : d.toISOString().slice(0, 10);
+}
+// READ-ONLY: derive timeline entries from historical crm.* fields + status so the master sees
+// past rep work that predates per-action activity[] logging. Never written back; tagged
+// synthetic:true and "(historical)".
+function getSynthesizedActivities(realKeys) {
+  const out = [];
+  state.leads.forEach(lead => {
+    const crm = lead.crm || {};
+    const owner = lead.assignedTo || lead.claimedBy || lead.movedToCRMBy || lead.qualifiedBy || 'Unknown';
+    const base = { leadName: lead.businessName, leadId: lead.id, leadStatus: lead.status, synthetic: true };
+    const candidates = [];
+    if (crm.dateFirstContact) candidates.push({ by: owner, action: 'first contact (historical)', date: crm.dateFirstContact, _fam: 'call' });
+    if (crm.dateLastContact && crm.dateLastContact !== crm.dateFirstContact) candidates.push({ by: owner, action: 'last contact (historical)', date: crm.dateLastContact, _fam: 'call' });
+    if (crm.disposition && crm.disposition !== 'nurture' && crm.disposition !== '') candidates.push({ by: owner, action: 'disposition: ' + getDispositionLabel(crm.disposition) + ' (historical)', date: crm.dateLastContact || crm.dateMovedToCRM || lead.dateAdded, _fam: 'disposition' });
+    if (crm.meetingBooked && crm.meetingDate) candidates.push({ by: owner, action: 'meeting booked (historical)', date: crm.meetingDate, _fam: 'meeting' });
+    if (lead.qualifiedBy && lead.qualification && lead.qualification.dateQualified) candidates.push({ by: lead.qualifiedBy, action: 'qualified (historical)', date: lead.qualification.dateQualified, _fam: 'qualified' });
+    if ((lead.movedToCRMBy || lead.status === 'crm') && crm.dateMovedToCRM) candidates.push({ by: lead.movedToCRMBy || owner, action: 'moved to CRM (historical)', date: crm.dateMovedToCRM, _fam: 'crm' });
+    candidates.forEach(c => {
+      if (!c.date) return;
+      const k = (c.by || 'Unknown') + '|' + c._fam + '|' + dayKey(c.date);
+      if (realKeys.has(k)) return; // a real logged activity already covers this user+family+day
+      realKeys.add(k);
+      out.push({ by: c.by || 'Unknown', action: c.action, date: c.date, ...base });
+    });
+  });
+  return out;
+}
 function getAllActivities() {
   const activities = [];
+  const realKeys = new Set();
   state.leads.forEach(lead => {
     if (!lead.activity) return;
     lead.activity.forEach(a => {
+      if (!a || typeof a.action !== 'string') return; // guard malformed entries (M12)
       activities.push({ ...a, leadName: lead.businessName, leadId: lead.id, leadStatus: lead.status });
+      realKeys.add((a.by || 'Unknown') + '|' + activityFamily(a.action) + '|' + dayKey(a.date));
     });
   });
+  // Append read-only historical entries derived from crm.* fields/status.
+  getSynthesizedActivities(realKeys).forEach(a => activities.push(a));
   activities.sort((a, b) => new Date(b.date) - new Date(a.date));
   return activities;
 }
@@ -4588,27 +4861,33 @@ function formatActivityTime(isoDate) {
 }
 
 function describeAction(action) {
-  const a = action.toLowerCase();
-  if (a.includes('logged call') || a.includes('logged a call') || a.startsWith('called')) return action;
-  if (a.includes('disposition')) return action;
-  if (a.includes('meeting')) return action;
-  if (a.includes('started working')) return action;
-  if (a.includes('qualified')) return 'qualified';
-  if (a.includes('moved to crm') || a.includes('crm')) return 'moved to CRM';
+  const action0 = String(action == null ? '' : action);
+  const a = action0.toLowerCase();
+  if (a.includes('logged call') || a.includes('logged a call') || a.startsWith('called')) return action0;
+  if (a.includes('disposition')) return action0;
+  if (a.includes('meeting')) return action0;
+  if (a.includes('won')) return action0;
+  if (a.includes('reassigned')) return action0;
+  if (a.includes('started working')) return action0;
+  if (a.includes('qualified')) return a.includes('historical') ? action0 : 'qualified';
+  if (a.includes('moved to crm') || a.includes('crm')) return a.includes('historical') ? action0 : 'moved to CRM';
   if (a.includes('note') || a.includes('added note')) return 'added a note';
-  if (a.includes('stage')) return 'changed stage to ' + action.replace(/.*stage\s*(to\s*)?/i, '');
+  if (a.includes('stage')) return 'changed stage to ' + action0.replace(/.*stage\s*(to\s*)?/i, '');
   if (a.includes('archived') || a.includes('archive')) return 'archived';
   if (a.includes('reactivated') || a.includes('reactivate')) return 'reactivated';
-  return action;
+  return action0;
 }
 
 function matchesActionFilter(action, filter) {
   if (filter === 'all') return true;
-  const a = action.toLowerCase();
+  const a = String(action || '').toLowerCase();
   switch (filter) {
     case 'call': return a.includes('logged call') || a.includes('logged a call') || a.startsWith('called');
     case 'disposition': return a.includes('disposition');
     case 'meeting': return a.includes('meeting');
+    case 'won': return a.includes('won');
+    case 'reassigned': return a.includes('reassigned');
+    case 'started': return a.includes('started working');
     case 'qualified': return a.includes('qualified');
     case 'moved to CRM': return (a.includes('moved to crm') || a.includes('crm')) && !a.includes('logged call');
     case 'note': return a.includes('note');
@@ -4620,8 +4899,11 @@ function matchesActionFilter(action, filter) {
 }
 
 function getActionBadgeClass(action) {
-  const a = action.toLowerCase();
+  const a = String(action || '').toLowerCase();
   if (a.includes('logged call') || a.includes('logged a call') || a.startsWith('called')) return 'badge-orange';
+  if (a.includes('won')) return 'badge-success';
+  if (a.includes('reassigned')) return 'badge-purple';
+  if (a.includes('started working')) return 'badge-teal';
   if (a.includes('meeting')) return 'badge-purple';
   if (a.includes('disposition')) return 'badge-blue';
   if (a.includes('qualified')) return 'badge-teal';
@@ -4643,7 +4925,7 @@ function navigateToLead(leadId) {
 }
 
 function renderActivityMonitor() {
-  if (!isMasterUser()) return;
+  if (!canViewActivityMonitor()) return;
   const container = document.getElementById('activity-monitor-content');
   const allActivities = getAllActivities();
 
@@ -4655,8 +4937,9 @@ function renderActivityMonitor() {
   // Apply filters
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Monday-start week, unified with Reports (was Sunday-start here) (M3).
   const startOfWeek = new Date(startOfToday);
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  startOfWeek.setDate(startOfWeek.getDate() - ((startOfWeek.getDay() + 6) % 7));
 
   let filtered = allActivities.filter(a => {
     if (filterUser !== 'all' && a.by !== filterUser) return false;
@@ -4669,10 +4952,12 @@ function renderActivityMonitor() {
   // Stats
   const totalActions = allActivities.length;
   const actionsToday = allActivities.filter(a => new Date(a.date) >= startOfToday).length;
-  const isCall = (a) => { const t = a.action.toLowerCase(); return t.includes('logged call') || t.includes('logged a call') || t.startsWith('called'); };
+  const isCall = (a) => { const t = String(a.action || '').toLowerCase(); return t.includes('logged call') || t.includes('logged a call') || t.startsWith('called'); };
   const callsToday = allActivities.filter(a => isCall(a) && new Date(a.date) >= startOfToday).length;
+  // Per-user "calls today" derived from the SAME filtered set the bars use, so the bar count
+  // and the calls figure share one scope (L4).
   const callsTodayByUser = {};
-  allActivities.forEach(a => { if (isCall(a) && new Date(a.date) >= startOfToday) callsTodayByUser[a.by] = (callsTodayByUser[a.by] || 0) + 1; });
+  filtered.forEach(a => { if (isCall(a) && new Date(a.date) >= startOfToday) callsTodayByUser[a.by] = (callsTodayByUser[a.by] || 0) + 1; });
   const userCounts = {};
   allActivities.forEach(a => { userCounts[a.by] = (userCounts[a.by] || 0) + 1; });
   const mostActive = Object.entries(userCounts).sort((a, b) => b[1] - a[1])[0];
@@ -4698,8 +4983,8 @@ function renderActivityMonitor() {
           <div class="am-feed-time">${formatActivityTime(a.date)}</div>
           <div class="am-feed-body">
             <span class="am-feed-user">${escapeHtml(a.by)}</span>
-            <span class="am-feed-action"> ${describeAction(a.action)} </span>
-            <span class="badge ${getActionBadgeClass(a.action)}" style="margin-right:var(--space-2);">${describeAction(a.action)}</span>
+            <span class="am-feed-action"> ${escapeHtml(describeAction(a.action))} </span>
+            <span class="badge ${getActionBadgeClass(a.action)}" style="margin-right:var(--space-2);">${escapeHtml(describeAction(a.action))}</span>
             <span class="am-feed-lead" data-action="am-goto-lead" data-lead-id="${a.leadId}">${escapeHtml(a.leadName)}</span>
           </div>
         </div>`;
