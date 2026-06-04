@@ -7,6 +7,11 @@
 <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&display=swap" rel="stylesheet">
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<!-- Leaflet (Map view — lead density planning). Loaded from CDN; degrades gracefully if offline. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <!-- Firebase (shared backend for multi-device sync). See FIREBASE-SETUP.md. -->
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
@@ -803,6 +808,10 @@ ul, ol { list-style: none; }
         <i data-lucide="bar-chart-3" aria-hidden="true"></i>
         Reports
       </button>
+      <button class="nav-item" data-section="map">
+        <i data-lucide="map" aria-hidden="true"></i>
+        Map
+      </button>
       <button class="nav-item" data-section="activity-monitor" id="nav-activity-monitor" style="display:none;">
         <i data-lucide="activity" aria-hidden="true"></i>
         Activity Monitor
@@ -885,6 +894,11 @@ ul, ol { list-style: none; }
       <!-- Reports -->
       <section id="section-reports" aria-label="Reports">
         <div id="reports-content"></div>
+      </section>
+
+      <!-- Map -->
+      <section id="section-map" aria-label="Map">
+        <div id="map-content"></div>
       </section>
 
       <!-- Activity Monitor (Master only) -->
@@ -2194,6 +2208,7 @@ function renderActiveSection() {
     case 'archive': renderArchive(); break;
     case 'playbooks': renderPlaybooks(); break;
     case 'reports': renderReports(); break;
+    case 'map': renderMap(); break;
     case 'activity-monitor': renderActivityMonitor(); break;
   }
   renderSidebarBadges();
@@ -2201,6 +2216,229 @@ function renderActiveSection() {
 function renderAll() {
   renderActiveSection();
   renderSidebarBadges();
+}
+
+// ========== MAP ==========
+// UK city-centroid lookup. Offline-first geocoding — leads are placed by matching
+// their (free-text) `address` string against these city names. No API key required.
+const GEO_CENTROIDS = {
+  'london': [51.5074, -0.1278], 'manchester': [53.4808, -2.2426], 'birmingham': [52.4862, -1.8904],
+  'leeds': [53.8008, -1.5491], 'liverpool': [53.4084, -2.9916], 'bristol': [51.4545, -2.5879],
+  'sheffield': [53.3811, -1.4701], 'edinburgh': [55.9533, -3.1883], 'glasgow': [55.8642, -4.2518],
+  'newcastle': [54.9783, -1.6178], 'nottingham': [52.9548, -1.1581], 'leicester': [52.6369, -1.1398],
+  'oxford': [51.7520, -1.2577], 'brighton': [50.8225, -0.1372], 'cardiff': [51.4816, -3.1791],
+  'belfast': [54.5973, -5.9301], 'norwich': [52.6309, 1.2974], 'york': [53.9590, -1.0815],
+  'cambridge': [52.2053, 0.1218], 'reading': [51.4543, -0.9781], 'southampton': [50.9097, -1.4044],
+  'portsmouth': [50.8198, -1.0880], 'coventry': [52.4068, -1.5197], 'hull': [53.7676, -0.3274],
+  'plymouth': [50.3755, -4.1427], 'aberdeen': [57.1497, -2.0943], 'dundee': [56.4620, -2.9707],
+  'bath': [51.3811, -2.3590], 'exeter': [50.7184, -3.5339], 'milton keynes': [52.0406, -0.7594]
+};
+
+// Deterministic hash-based jitter (±~0.06°) so co-located leads don't stack on one pixel.
+function geoJitter(seed) {
+  let h = 0;
+  const s = String(seed || '');
+  for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) & 0xffff; }
+  const dx = ((h % 100) / 100 - 0.5) * 0.12;
+  const dy = (((h >> 5) % 100) / 100 - 0.5) * 0.12;
+  return [dx, dy];
+}
+
+// Persistent cache for runtime Nominatim lookups (best-effort, never blocks render).
+function loadGeoCache() {
+  try { return JSON.parse(localStorage.getItem('crescendo-geocache') || '{}') || {}; }
+  catch (_) { return {}; }
+}
+function saveGeoCache(cache) {
+  try { localStorage.setItem('crescendo-geocache', JSON.stringify(cache)); } catch (_) {}
+}
+
+// Resolve a [lat,lng] for a lead synchronously from the centroid table, or null.
+function geocodeLead(l) {
+  if (!l) return null;
+  // Explicit coordinates win.
+  const lat = Number(l.lat), lng = Number(l.lng);
+  if (Number.isFinite(lat) && Number.isFinite(lng) && (lat !== 0 || lng !== 0)) return [lat, lng];
+  const addr = (typeof l.address === 'string') ? l.address.trim().toLowerCase() : '';
+  if (!addr) return null;
+  // Substring match against known city centroids.
+  for (const city of Object.keys(GEO_CENTROIDS)) {
+    if (addr.includes(city)) {
+      const [j1, j2] = geoJitter(l.id || addr);
+      return [GEO_CENTROIDS[city][0] + j1, GEO_CENTROIDS[city][1] + j2];
+    }
+  }
+  // Cached runtime (Nominatim) result, if any.
+  const cache = loadGeoCache();
+  if (cache[addr] && Array.isArray(cache[addr])) {
+    const [j1, j2] = geoJitter(l.id || addr);
+    return [cache[addr][0] + j1, cache[addr][1] + j2];
+  }
+  return null;
+}
+
+// Optional best-effort runtime geocode for unknown addresses. Never blocks render;
+// caches the result and re-renders the map if still visible.
+function backfillUnknownLocations(unknownLeads) {
+  if (!Array.isArray(unknownLeads) || !unknownLeads.length) return;
+  const cache = loadGeoCache();
+  // Only attempt addresses we have text for and haven't cached/failed before.
+  const todo = [];
+  const seen = new Set();
+  for (const l of unknownLeads) {
+    const addr = (typeof l.address === 'string') ? l.address.trim() : '';
+    if (!addr) continue;
+    const key = addr.toLowerCase();
+    if (cache[key] !== undefined || seen.has(key)) continue;
+    seen.add(key);
+    todo.push(key);
+  }
+  if (!todo.length) return;
+  // Throttle: one lookup per render cycle to respect Nominatim usage policy.
+  const key = todo[0];
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=gb&q=' + encodeURIComponent(key))
+    .then(r => r.ok ? r.json() : [])
+    .then(arr => {
+      const c = loadGeoCache();
+      if (Array.isArray(arr) && arr.length && arr[0].lat && arr[0].lon) {
+        c[key] = [Number(arr[0].lat), Number(arr[0].lon)];
+      } else {
+        c[key] = null; // mark as attempted to avoid re-querying
+      }
+      saveGeoCache(c);
+      if (state.activeSection === 'map') renderMap();
+    })
+    .catch(() => {});
+}
+
+// Distinct colours per lead status. Reuse theme tokens where sensible.
+function leadStatusColor(status) {
+  switch (status) {
+    case 'crm': return '#01696f';        // teal — in active outreach
+    case 'qualified': return '#437a22';  // green — qualified
+    case 'lead': return '#006494';       // blue
+    case 'new': return '#d19900';        // gold
+    case 'archive': return '#7a7974';    // grey — archived/backlog
+    case 'unqualified': default: return '#964219'; // warning brown
+  }
+}
+function leadStatusLabel(status) {
+  switch (status) {
+    case 'crm': return 'CRM / Outreach';
+    case 'qualified': return 'Qualified';
+    case 'lead': return 'Lead';
+    case 'new': return 'New';
+    case 'archive': return 'Archive';
+    case 'unqualified': return 'Unqualified';
+    default: return status || 'Unknown';
+  }
+}
+
+let __crescendoMap = null; // Leaflet map instance (recreated each render)
+
+function renderMap() {
+  const container = document.getElementById('map-content');
+  if (!container) return;
+
+  const leafletReady = !!(window.L && window.L.map);
+
+  // Partition live leads into located vs undisclosed.
+  const located = [];
+  const undisclosed = [];
+  (Array.isArray(state.leads) ? state.leads : []).forEach(l => {
+    const pt = geocodeLead(l);
+    if (pt) located.push({ lead: l, pt }); else undisclosed.push(l);
+  });
+
+  // Status legend counts (only for statuses actually present among located leads).
+  const statusCounts = {};
+  located.forEach(({ lead }) => { statusCounts[lead.status] = (statusCounts[lead.status] || 0) + 1; });
+  const legendOrder = ['crm', 'qualified', 'lead', 'new', 'unqualified', 'archive'];
+  const legendHtml = legendOrder.filter(s => statusCounts[s]).map(s =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;">
+       <span style="width:12px;height:12px;border-radius:9999px;background:${leadStatusColor(s)};display:inline-block;border:1.5px solid #fff;box-shadow:0 0 0 1px var(--color-border);"></span>
+       ${escapeHtml(leadStatusLabel(s))} (${statusCounts[s]})
+     </span>`).join('');
+
+  const undisclosedListHtml = undisclosed.length
+    ? undisclosed.map(l => `
+        <button type="button" class="map-undisclosed-row" data-action="view-lead" data-id="${escapeHtml(l.id)}"
+          style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:8px 10px;border:none;border-bottom:1px solid var(--color-divider);background:transparent;cursor:pointer;font-size:var(--text-sm);">
+          <span style="width:8px;height:8px;border-radius:9999px;background:${leadStatusColor(l.status)};flex:0 0 auto;"></span>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(l.businessName || 'Unnamed lead')}</span>
+          <span style="color:var(--color-text-muted);flex:0 0 auto;">${escapeHtml(leadStatusLabel(l.status))}</span>
+        </button>`).join('')
+    : '<div style="padding:12px;color:var(--color-text-muted);font-size:var(--text-sm);">All located leads are on the map.</div>';
+
+  container.innerHTML = `
+    <div class="section-header"><h1>Map</h1></div>
+    <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-4);">
+      Lead density across the UK. Pins are approximate — derived from each lead's address (city centroid) when exact coordinates are missing.
+    </p>
+    <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center;margin-bottom:var(--space-4);font-size:var(--text-sm);">
+      ${legendHtml || '<span style="color:var(--color-text-muted);">No located leads.</span>'}
+      <span style="color:var(--color-text-muted);">${located.length} mapped · ${undisclosed.length} location undisclosed</span>
+    </div>
+    <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:stretch;">
+      <div style="flex:1 1 480px;min-width:280px;">
+        ${leafletReady
+          ? `<div id="crescendo-leaflet-map" style="height:560px;border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;z-index:0;"></div>`
+          : `<div style="height:560px;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;border:1px dashed var(--color-border);border-radius:var(--radius-md);color:var(--color-text-muted);">Map library unavailable (offline?). Lead counts above still reflect the data.</div>`}
+      </div>
+      <aside style="flex:0 1 280px;min-width:240px;display:flex;flex-direction:column;border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;max-height:560px;">
+        <div style="padding:10px 12px;border-bottom:1px solid var(--color-border);background:var(--color-surface-offset);font-weight:600;font-size:var(--text-sm);">
+          Undisclosed location (${undisclosed.length})
+        </div>
+        <div style="overflow-y:auto;">${undisclosedListHtml}</div>
+      </aside>
+    </div>
+  `;
+
+  // Destroy any prior instance before reusing the container.
+  if (__crescendoMap) { try { __crescendoMap.remove(); } catch (_) {} __crescendoMap = null; }
+
+  if (!leafletReady) return;
+
+  const mapEl = document.getElementById('crescendo-leaflet-map');
+  if (!mapEl) return;
+
+  const map = window.L.map(mapEl, { scrollWheelZoom: true });
+  __crescendoMap = map;
+  window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  const markers = [];
+  located.forEach(({ lead, pt }) => {
+    const color = leadStatusColor(lead.status);
+    const m = window.L.circleMarker(pt, {
+      radius: 7, color: '#fff', weight: 1.5, fillColor: color, fillOpacity: 0.85
+    });
+    const name = escapeHtml(lead.businessName || 'Unnamed lead');
+    const statusLabel = escapeHtml(leadStatusLabel(lead.status));
+    const assigned = lead.assignedTo ? escapeHtml(lead.assignedTo) : 'Unclaimed';
+    const claim = (lead.claimedBy && lead.claimedBy !== lead.assignedTo)
+      ? '<br>Last claimed by ' + escapeHtml(lead.claimedBy) : '';
+    m.bindPopup(`<strong>${name}</strong><br>Status: ${statusLabel}<br>Assigned: ${assigned}${claim}`);
+    m.on('click', () => { try { openPanel('view-lead', getLeadById(lead.id)); } catch (_) {} });
+    m.addTo(map);
+    markers.push(m);
+  });
+
+  if (markers.length) {
+    const group = window.L.featureGroup(markers);
+    try { map.fitBounds(group.getBounds().pad(0.2)); }
+    catch (e) { map.setView([54.0, -2.5], 6); }
+  } else {
+    map.setView([54.0, -2.5], 5); // default: UK overview
+  }
+
+  // Leaflet needs a size recalculation once the (previously hidden) container is laid out.
+  setTimeout(() => { try { map.invalidateSize(); } catch (e) {} }, 60);
+
+  // Best-effort runtime geocoding for unknown addresses (non-blocking).
+  try { backfillUnknownLocations(undisclosed); } catch (_) {}
 }
 
 // ========== SIDEBAR BADGES ==========
@@ -4058,6 +4296,15 @@ document.getElementById('section-home').addEventListener('click', e => {
       else if (lead.status === 'qualified') showSection('qualified-leads');
       else showSection('lead-bank');
     }
+  }
+});
+
+// Map events (undisclosed-location list rows open the lead)
+document.getElementById('section-map').addEventListener('click', e => {
+  const target = e.target.closest('[data-action]');
+  if (!target) return;
+  if (target.dataset.action === 'view-lead') {
+    openPanel('view-lead', getLeadById(target.dataset.id));
   }
 });
 
@@ -6424,6 +6671,38 @@ async function startSharedSync() {
       // Drop the fictional sample leads once real cloud data is present.
       let merged = Array.from(byId.values());
       if (remoteLeads.length > 0) merged = merged.filter(l => l && l.source !== 'sample');
+      // CLONE COLLAPSE (data-integrity): an earlier build could mint duplicate lead docs
+      // (same businessName, new id). Such clones can linger in a rep's localStorage and would
+      // otherwise be re-pushed by the push-back below as fresh cloud docs. Collapse any
+      // LOCAL-ONLY lead whose businessName already exists in the cloud onto the canonical
+      // remote lead — unioning its activity so no call history is lost — then drop it so it is
+      // never recreated. A local-only lead with a NEW businessName is a genuine new lead: kept.
+      if (remoteLeads.length > 0) {
+        const __remoteIds = new Set();
+        for (const r of remoteLeads) { if (r && r.id) __remoteIds.add(r.id); }
+        // Canonical = the merged lead that owns a real cloud id, keyed by businessName.
+        const __canonByName = new Map();
+        for (const l of merged) {
+          if (!l || !__remoteIds.has(l.id)) continue;
+          const k = (l.businessName || '').trim().toLowerCase();
+          if (k && !__canonByName.has(k)) __canonByName.set(k, l);
+        }
+        const __akey = a => `${(a && a.date) || ''}|${(a && a.action) || ''}|${(a && a.by) || ''}`;
+        merged = merged.filter(l => {
+          if (!l) return false;
+          if (__remoteIds.has(l.id)) return true;            // canonical cloud lead — keep
+          const k = (l.businessName || '').trim().toLowerCase();
+          const canon = k ? __canonByName.get(k) : null;
+          if (!canon || canon === l) return true;            // genuinely new lead — keep & sync
+          // duplicate of an existing cloud lead → fold activity into the canonical lead, drop clone.
+          const have = new Set((canon.activity || []).map(__akey));
+          for (const a of (l.activity || [])) {
+            if (!have.has(__akey(a))) { (canon.activity = canon.activity || []).push(a); have.add(__akey(a)); }
+          }
+          if (Array.isArray(canon.activity)) canon.activity.sort((a, b) => String((b && b.date) || '').localeCompare(String((a && a.date) || '')));
+          return false;
+        });
+      }
       state.leads = merged;
       // __applyingRemote so saveState below doesn't re-stamp the just-merged remote leads.
       CrescendoSync.__applyingRemote = true;
