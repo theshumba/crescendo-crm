@@ -1285,10 +1285,12 @@ function isMasterUser() {
 }
 const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj'];
 const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol'];
-// True for the owner (Master) AND CEO roster logins, who share aggregate access.
+// Who may OPEN the Activity Monitor. Everyone on the team gets read-only visibility
+// (callers asked to see who has contacted whom, so nobody double-calls) — Master/CEOs
+// additionally get reassign + export, gated separately (canReassignLeads / renderExportButton).
 // Centralised so nav, redirect, and render gates can't drift apart (M5).
 function canViewActivityMonitor() {
-  return isMasterUser() || CEOS.includes(getCurrentUser());
+  return isMasterUser() || CEOS.includes(getCurrentUser()) || isConsultant();
 }
 // Reserved identity that may ONLY be assumed via the Master PIN gate. Free-typed
 // 'Master' (any case/spacing) must never resolve to the owner identity (C4).
@@ -1341,16 +1343,27 @@ function isConsultant() {
   return CONSULTANTS.includes(getCurrentUser());
 }
 function applyConsultantDefaults() {
-  // Only apply defaults on first-ever login when no preference has been persisted
+  // SHARED POOL: every rep sees every lead by default. assignedTo is a "who's on it" tag,
+  // not a private bucket — so the default view is always 'all'. The "Mine" chip still lets a
+  // rep focus on their own tagged leads on demand; it just isn't the default any more.
+  const MIGRATION_KEY = 'crescendo-shared-pool-v1';
+  const migrated = !!localStorage.getItem(MIGRATION_KEY);
   const hasPref = !!localStorage.getItem('crescendo-filters');
-  if (hasPref) return;
-  if (isConsultant()) {
-    state.filters.leadBank.assignedTo = getCurrentUser();
-    state.filters.crm.assignedTo = getCurrentUser();
-  } else {
+  // One-time un-silo: older builds defaulted consultants to assignedTo=<their name>, which
+  // hid everyone else's leads. On first load after this change, force both list filters back
+  // to 'all' even if a per-rep preference was already persisted, then never touch it again.
+  if (!migrated) {
     state.filters.leadBank.assignedTo = 'all';
     state.filters.crm.assignedTo = 'all';
+    try {
+      localStorage.setItem(MIGRATION_KEY, '1');
+      localStorage.setItem('crescendo-filters', JSON.stringify(state.filters));
+    } catch (_) {}
+    return;
   }
+  if (hasPref) return; // returning rep — respect whatever filter they last chose
+  state.filters.leadBank.assignedTo = 'all';
+  state.filters.crm.assignedTo = 'all';
 }
 function updateMasterUI() {
   const navBtn = document.getElementById('nav-activity-monitor');
@@ -1372,6 +1385,16 @@ function addActivity(lead, action) {
   // splits across near-duplicate spellings in the Activity Monitor (L5).
   const by = resolveRepName(getCurrentUser());
   lead.activity.unshift({ action, by, date: new Date().toISOString() });
+}
+// OWNERSHIP TAG: tag a lead with the rep actively working it. Leads live in ONE shared pool
+// (everyone sees every lead) — assignedTo is just the "who's on it" label, NOT a visibility
+// gate. Called whenever a rep takes a committing action (claim/call/qualify/move) so the tag
+// always reflects the real worker, not the seed-time round-robin. Master/CEO oversight logins
+// don't grab the tag — they reassign deliberately via the dropdown instead.
+function tagWorker(lead) {
+  if (!lead) return;
+  if (isMasterUser() || CEOS.includes(getCurrentUser())) return;
+  lead.assignedTo = resolveRepName(getCurrentUser());
 }
 // ===== LEAD CLAIM / DOUBLE-CALL PREVENTION =====
 // A claim is "active" for CLAIM_TTL_MS after activeCallAt; after that it is stale
@@ -1395,6 +1418,7 @@ function claimLead(lead) {
   lead.claimedAt = new Date().toISOString();
   lead.activeCallBy = me;
   lead.activeCallAt = new Date().toISOString();
+  tagWorker(lead);
   addActivity(lead, 'started working this lead');
   saveState(); // persists locally AND pushes via CrescendoSync.pushLeads
 }
@@ -1496,6 +1520,7 @@ function logCall(id, outcome) {
   if (!lead.crm) lead.crm = {};
   lead.crm.dateLastContact = todayISO;
   if (!lead.crm.dateFirstContact) lead.crm.dateFirstContact = todayISO;
+  tagWorker(lead);
   addActivity(lead, 'logged call (' + callOutcomeLabel(outcome) + ')');
   // Calling is the most important rep action — also release the active-call lock.
   if (typeof releaseLead === 'function') releaseLead(lead);
@@ -1901,6 +1926,7 @@ function qualifyLead(id, qualData) {
   if (!lead) return;
   lead.status = 'qualified';
   lead.qualifiedBy = getCurrentUser();
+  tagWorker(lead);
   lead.qualification = {
     strategyDesign: qualData.strategyDesign || '',
     experienceDesign: qualData.experienceDesign || '',
@@ -1926,6 +1952,7 @@ function moveToCRM(id) {
   if (!lead) return;
   lead.status = 'crm';
   lead.movedToCRMBy = getCurrentUser();
+  tagWorker(lead);
   if (!lead.crm) {
     lead.crm = {
       stage: 1,
@@ -6662,6 +6689,17 @@ async function startSharedSync() {
         if (!local) { r.__remoteStamped = true; byId.set(r.id, r); continue; }
         const rAt = (typeof r._modAt === 'string') ? r._modAt : '';
         const lAt = (typeof local._modAt === 'string') ? local._modAt : '';
+        // ACTIVITY IS ADDITIVE: whole-doc newest-wins would silently drop the loser's
+        // just-logged call when two reps touch the SAME lead near-simultaneously. Union both
+        // sides' activity into whichever doc wins so no call/disposition history is ever lost.
+        const __k = a => `${(a && a.date) || ''}|${(a && a.action) || ''}|${(a && a.by) || ''}`;
+        const winner = (rAt > lAt) ? r : local;
+        const loser = (rAt > lAt) ? local : r;
+        const have = new Set((winner.activity || []).map(__k));
+        for (const a of (loser.activity || [])) {
+          if (!have.has(__k(a))) { (winner.activity = winner.activity || []).push(a); have.add(__k(a)); }
+        }
+        if (Array.isArray(winner.activity)) winner.activity.sort((a, b) => String((b && b.date) || '').localeCompare(String((a && a.date) || '')));
         // Remote wins only if it is strictly newer than the local copy.
         if (rAt > lAt) { r.__remoteStamped = true; byId.set(r.id, r); }
         // else keep local (an unpushed newer edit, or a tie) and let it push on next saveState.
