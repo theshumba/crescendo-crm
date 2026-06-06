@@ -1285,12 +1285,11 @@ function isMasterUser() {
 }
 const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj'];
 const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol'];
-// Who may OPEN the Activity Monitor. Everyone on the team gets read-only visibility
-// (callers asked to see who has contacted whom, so nobody double-calls) — Master/CEOs
-// additionally get reassign + export, gated separately (canReassignLeads / renderExportButton).
-// Centralised so nav, redirect, and render gates can't drift apart (M5).
+// Who may OPEN the Activity Monitor (master tracker). Owner (Master) + CEO roster ONLY —
+// callers/consultants must NOT see it. Centralised so nav, redirect, and render gates can't
+// drift apart (M5).
 function canViewActivityMonitor() {
-  return isMasterUser() || CEOS.includes(getCurrentUser()) || isConsultant();
+  return isMasterUser() || CEOS.includes(getCurrentUser());
 }
 // Reserved identity that may ONLY be assumed via the Master PIN gate. Free-typed
 // 'Master' (any case/spacing) must never resolve to the owner identity (C4).
