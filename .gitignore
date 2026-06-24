@@ -6,3 +6,10 @@ _local/
 
 # local safety backups
 crescendo-crm.backup-*.html
+
+# Environment / secrets (added by security hygiene pass)
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
