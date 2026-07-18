@@ -2376,7 +2376,8 @@ function loadState() {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
         // Normalise shape first (C5/H5) so backfill + merge see well-formed leads.
-        state.leads = parsed.map(l => normalizeLead(l));
+        // Drop any tombstoned leads that slipped into an older session's localStorage.
+        state.leads = parsed.filter(l => !(l && l._deleted)).map(l => normalizeLead(l));
         // OUTAGE-EDIT PROTECTION (C1): edits made while sync was down carry no _modAt. The
         // merge treats empty _modAt as "oldest", so stale cloud copies would overwrite them on
         // first reconnect. Backfill a current-ISO _modAt on every lead missing one and persist
@@ -5488,6 +5489,20 @@ document.getElementById('side-panel').addEventListener('submit', e => {
       return;
     }
     document.getElementById('err-businessName').classList.remove('visible');
+    // UNIQUE-NAME GUARD: an exact duplicate (normalised) is blocked outright — this is the
+    // client-side guarantee that lets the cloud accept new lead docs again without re-opening
+    // the June duplicate-minting incident. Near-matches still just warn (see dup-warning).
+    const __newNorm = normaliseBusinessName(bn.value);
+    const __exactDup = state.leads.find(l => l && normaliseBusinessName(l.businessName) === __newNorm);
+    if (__exactDup) {
+      const warn = document.getElementById('dup-warning');
+      if (warn) {
+        warn.textContent = '“' + __exactDup.businessName + '” is already in the CRM — open it instead of adding it twice.';
+        warn.style.display = 'block';
+      }
+      bn.focus();
+      return;
+    }
 
     // Collect phones
     const phones = [];
@@ -7344,10 +7359,22 @@ async function startSharedSync() {
       // This never clobbers a local edit the rep just made that hasn't pushed yet.
       const byId = new Map();
       const localList = Array.isArray(state.leads) ? state.leads : [];
-      for (const l of localList) { if (l && l.id) byId.set(l.id, l); }
+      // Never carry a locally-held tombstone forward — it must not render or re-push.
+      for (const l of localList) { if (l && l.id && !l._deleted) byId.set(l.id, l); }
       for (const r of remoteLeads) {
         if (!r || !r.id) continue;
         const local = byId.get(r.id);
+        // TOMBSTONE DROP (read side of H3): a {_deleted:true} doc means another rep deleted
+        // this lead. Remove it locally unless the local copy is strictly newer (a rep edited
+        // AFTER the delete — edit beats delete, and the next push resurrects it deliberately).
+        if (r._deleted) {
+          if (local) {
+            const rAtD = (typeof r._modAt === 'string') ? r._modAt : '';
+            const lAtD = (typeof local._modAt === 'string') ? local._modAt : '';
+            if (rAtD >= lAtD) byId.delete(r.id);
+          }
+          continue; // never merge the tombstone itself into the lead list
+        }
         if (!local) { r.__remoteStamped = true; byId.set(r.id, r); continue; }
         const rAt = (typeof r._modAt === 'string') ? r._modAt : '';
         const lAt = (typeof local._modAt === 'string') ? local._modAt : '';
