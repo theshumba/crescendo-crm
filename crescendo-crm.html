@@ -1563,7 +1563,7 @@ function showLoginOverlay() {
 function isMasterUser() {
   return getCurrentUser() === 'Master';
 }
-const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj'];
+const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
 const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol'];
 // Who may OPEN the Activity Monitor (master tracker). Owner (Master) + CEO roster ONLY —
 // callers/consultants must NOT see it. Centralised so nav, redirect, and render gates can't
@@ -5677,7 +5677,7 @@ document.getElementById('switch-user-btn').addEventListener('click', () => {
 });
 
 // ========== ACTIVITY MONITOR ==========
-const AM_TEAM_MEMBERS = ['Ayoub Rasol', 'Melusi Ndoro', 'Joshua Khalili', 'Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj'];
+const AM_TEAM_MEMBERS = ['Ayoub Rasol', 'Melusi Ndoro', 'Joshua Khalili', 'Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
 const AM_ACTION_TYPES = [
   { value: 'all', label: 'All Actions' },
   { value: 'call', label: 'Calls' },
@@ -6534,14 +6534,15 @@ When you write on Crescendo's behalf (emails, scripts, responses), use this voic
 
 # THE SALES TEAM (THE CONSULTANTS)
 
-Three independent contractors who handle the top of funnel:
+Four independent contractors who handle the top of funnel:
 - **Muneeb Moiz** — Consultant
 - **Yousuf Zacky** — Consultant
 - **Ameer Munj** — Consultant
+- **Amir Hasbullah** — Consultant
 
 Their job: qualify leads, cold call, cold email, follow up, book discovery calls. The founders run the discovery and solution calls and close.
 
-Each has ~180 leads assigned in the CRM. They log in with their name and see their assigned leads.
+They log in with their own name and work one shared pool of ~540 leads in the CRM. The "assigned to" tag shows who is currently on a lead, it does not hide leads from anyone else.
 
 # THE THREE SERVICE PILLARS
 
