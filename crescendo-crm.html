@@ -1524,8 +1524,18 @@ const CrescendoSync = (function () {
 })();
 
 // ========== USER SESSION ==========
+// One-off spelling corrections to the roster. A rep signed in under the old spelling would
+// otherwise stop being recognised (losing their leader/sales powers) the moment the roster
+// changed, so the stored identity is rewritten on read.
+const NAME_CORRECTIONS = { 'Adnan': 'Adan' };
 function getCurrentUser() {
-  return localStorage.getItem('crescendo-crm-user') || 'Unknown';
+  const stored = localStorage.getItem('crescendo-crm-user');
+  if (stored && NAME_CORRECTIONS[stored]) {
+    const fixed = NAME_CORRECTIONS[stored];
+    try { localStorage.setItem('crescendo-crm-user', fixed); } catch (_) {}
+    return fixed;
+  }
+  return stored || 'Unknown';
 }
 function setCurrentUser(name) {
   // Always store the canonical spelling so attribution (_modBy/activity.by/etc.) is consistent.
@@ -1564,13 +1574,13 @@ function isMasterUser() {
   return getCurrentUser() === 'Master';
 }
 const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
-const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol', 'Adnan'];
+const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol', 'Adan'];
 // SELLING LEADERS: senior members who ALSO work leads themselves. They keep every oversight
 // power (Activity Monitor, export, reassign) and additionally behave exactly like a rep —
 // their work tags to them and they appear on every assign / filter / report surface. Without
 // this, a lead they moved to the CRM stayed tagged to whoever the seed assigned it to, so
 // their own work was invisible to them and to the "Mine" views.
-const SELLING_LEADERS = ['Joshua Khalili', 'Adnan'];
+const SELLING_LEADERS = ['Joshua Khalili', 'Adan'];
 // Everyone who can OWN a lead — the single roster behind every assigned-to dropdown,
 // reassign list and per-rep filter. Consultants first, then the leaders who also sell.
 const SALES_TEAM = [...CONSULTANTS, ...SELLING_LEADERS];
@@ -1611,10 +1621,17 @@ function addCustomRep(name) {
   }
 }
 // Full ordered list of selectable identities (roster + persisted custom reps, de-duped).
+// Corrected spellings are stripped so the picker never offers the wrong version of a name.
 function getKnownReps() {
+  const wrong = new Set(Object.keys(NAME_CORRECTIONS).map(n => n.toLowerCase()));
   const all = [...CEOS, ...CONSULTANTS, ...getCustomReps()];
   const seen = new Set();
-  return all.filter(n => { const k = n.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+  return all.filter(n => {
+    const k = n.toLowerCase();
+    if (wrong.has(k) || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
 }
 // Collapse a free-typed name onto its existing canonical spelling if one exists
 // (case/whitespace-insensitive). Prevents 'ameer' / 'Ameer ' splitting history.
@@ -1625,6 +1642,11 @@ function resolveRepName(name) {
   // assumed through the PIN gate. Free-typed 'master' is treated as an ordinary (invalid)
   // rep name so it can never grant owner powers (C4).
   if (clean.toLowerCase() === RESERVED_MASTER_NAME) return clean;
+  // A corrected spelling collapses onto the right roster name, so anything already written
+  // under the old one folds into the same person instead of splitting his history.
+  for (const w in NAME_CORRECTIONS) {
+    if (w.toLowerCase() === clean.toLowerCase()) return NAME_CORRECTIONS[w];
+  }
   // Precedence: canonical roster (CEOS then CONSULTANTS) ALWAYS wins over custom reps so a
   // near-duplicate custom rep can never shadow/mis-canonicalise a CEO or consultant (M6).
   const lc = clean.toLowerCase();
@@ -5716,7 +5738,7 @@ document.getElementById('switch-user-btn').addEventListener('click', () => {
 });
 
 // ========== ACTIVITY MONITOR ==========
-const AM_TEAM_MEMBERS = ['Ayoub Rasol', 'Melusi Ndoro', 'Joshua Khalili', 'Adnan', 'Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
+const AM_TEAM_MEMBERS = ['Ayoub Rasol', 'Melusi Ndoro', 'Joshua Khalili', 'Adan', 'Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
 const AM_ACTION_TYPES = [
   { value: 'all', label: 'All Actions' },
   { value: 'call', label: 'Calls' },
