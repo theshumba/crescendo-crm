@@ -1564,7 +1564,26 @@ function isMasterUser() {
   return getCurrentUser() === 'Master';
 }
 const CONSULTANTS = ['Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
-const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol'];
+const CEOS = ['Melusi Ndoro', 'Joshua Khalili', 'Ayoub Rasol', 'Adnan'];
+// SELLING LEADERS: senior members who ALSO work leads themselves. They keep every oversight
+// power (Activity Monitor, export, reassign) and additionally behave exactly like a rep —
+// their work tags to them and they appear on every assign / filter / report surface. Without
+// this, a lead they moved to the CRM stayed tagged to whoever the seed assigned it to, so
+// their own work was invisible to them and to the "Mine" views.
+const SELLING_LEADERS = ['Joshua Khalili', 'Adnan'];
+// Everyone who can OWN a lead — the single roster behind every assigned-to dropdown,
+// reassign list and per-rep filter. Consultants first, then the leaders who also sell.
+const SALES_TEAM = [...CONSULTANTS, ...SELLING_LEADERS];
+// True when the current user personally works leads (consultant OR selling leader).
+function isSalesUser() {
+  return SALES_TEAM.includes(getCurrentUser());
+}
+// Oversight-only logins (Master, and CEOs who don't personally call) must never grab the
+// "who's on it" tag — they reassign deliberately instead.
+function isOversightOnly() {
+  const u = getCurrentUser();
+  return isMasterUser() || (CEOS.includes(u) && !SELLING_LEADERS.includes(u));
+}
 // Who may OPEN the Activity Monitor (master tracker). Owner (Master) + CEO roster ONLY —
 // callers/consultants must NOT see it. Centralised so nav, redirect, and render gates can't
 // drift apart (M5).
@@ -1621,6 +1640,15 @@ function canReassignLeads() {
 function isConsultant() {
   return CONSULTANTS.includes(getCurrentUser());
 }
+// Owner label for a lead's assigned-to <select>: the roster PLUS the lead's current owner if
+// that owner sits outside it (an old seed name, a custom rep, an oversight login). Without
+// this the select silently rendered its FIRST option as selected, so a lead owned by someone
+// off-roster looked like it belonged to Muneeb.
+function ownerOptions(current) {
+  const list = [...SALES_TEAM];
+  if (current && !list.includes(current)) list.push(current);
+  return list;
+}
 function applyConsultantDefaults() {
   // SHARED POOL: every rep sees every lead by default. assignedTo is a "who's on it" tag,
   // not a private bucket — so the default view is always 'all'. The "Mine" chip still lets a
@@ -1672,7 +1700,7 @@ function addActivity(lead, action) {
 // don't grab the tag — they reassign deliberately via the dropdown instead.
 function tagWorker(lead) {
   if (!lead) return;
-  if (isMasterUser() || CEOS.includes(getCurrentUser())) return;
+  if (isOversightOnly()) return;
   lead.assignedTo = resolveRepName(getCurrentUser());
 }
 // ===== LEAD CLAIM / DOUBLE-CALL PREVENTION =====
@@ -2205,7 +2233,9 @@ function addLead(formData) {
     status: 'unqualified',
     qualification: null,
     crm: null,
-    assignedTo: CONSULTANTS[state.leads.length % CONSULTANTS.length]
+    // A rep who adds a lead owns it. Only oversight logins (Master / non-selling CEOs) fall
+    // back to the round-robin, since they add leads on someone else's behalf.
+    assignedTo: isOversightOnly() ? SALES_TEAM[state.leads.length % SALES_TEAM.length] : resolveRepName(getCurrentUser())
   };
   state.leads.unshift(lead);
   addActivity(lead, 'added lead');
@@ -2945,7 +2975,8 @@ function renderMap() {
 // ========== SIDEBAR BADGES ==========
 function renderSidebarBadges() {
   const leadBankCount = state.leads.filter(l => l.status !== 'archive').length;
-  const qualCount = state.leads.filter(l => l.status === 'qualified' || l.status === 'crm').length;
+  // Waiting-to-be-moved only, so the badge visibly drops the moment a lead goes to the CRM.
+  const qualCount = state.leads.filter(l => l.status === 'qualified').length;
   const crmCount = state.leads.filter(l => l.status === 'crm').length;
   const meetCount = state.leads.filter(l => l.status === 'crm' && l.crm && l.crm.meetingBooked).length;
   const archCount = state.leads.filter(l => l.status === 'archive').length;
@@ -3226,8 +3257,8 @@ function renderLeadBank() {
         ${SOURCES.map(s => `<option value="${s}"${f.source===s?' selected':''}>${sourceLabel(s)}</option>`).join('')}
       </select>
       <select class="form-select" data-filter="lb-assigned" aria-label="Filter by assigned consultant">
-        <option value="all"${f.assignedTo==='all'?' selected':''}>All Consultants</option>
-        ${CONSULTANTS.map(c => `<option value="${c}"${f.assignedTo===c?' selected':''}>${c}</option>`).join('')}
+        <option value="all"${f.assignedTo==='all'?' selected':''}>All Sales</option>
+        ${ownerOptions(f.assignedTo === 'all' ? '' : f.assignedTo).map(c => `<option value="${c}"${f.assignedTo===c?' selected':''}>${c}</option>`).join('')}
       </select>
       <button class="today-chip${f.assignedTo === getCurrentUser() ? ' active' : ''}" data-filter="lb-mine" aria-pressed="${f.assignedTo === getCurrentUser()}"><i data-lucide="user-check" aria-hidden="true"></i> Mine</button>
       <button class="today-chip${f.today ? ' active' : ''}" data-action="toggle-today-filter" data-scope="lead-bank" aria-pressed="${!!f.today}"><i data-lucide="calendar-clock" aria-hidden="true"></i> Today</button>
@@ -3236,14 +3267,14 @@ function renderLeadBank() {
         <option value="score"${f.sort==='score'?' selected':''}>Sort by Score</option>
         <option value="name"${f.sort==='name'?' selected':''}>Sort by Name</option>
       </select>
-      ${isConsultant() ? `<label class="consultant-view-toggle"><input type="checkbox" data-filter="lb-show-all" ${f.assignedTo==='all'?'checked':''}> Show all leads</label>` : ''}
+      ${isSalesUser() ? `<label class="consultant-view-toggle"><input type="checkbox" data-filter="lb-show-all" ${f.assignedTo==='all'?'checked':''}> Show all leads</label>` : ''}
       <span class="count-label" id="lb-count"></span>
     </div>
     <div class="bulk-bar${(state.bulkScope === 'lead-bank' && state.bulkSelection && state.bulkSelection.length) ? ' active' : ''}" id="bulk-bar-lead-bank">
       <span class="bulk-count">${(state.bulkSelection || []).length} selected</span>
       <select class="form-select bulk-action-select" data-action="bulk-action" data-scope="lead-bank" aria-label="Bulk action">
         <option value="">Choose action...</option>
-        ${canReassignLeads() ? '<optgroup label="Reassign to">' + CONSULTANTS.map(c => `<option value="reassign:${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') + '</optgroup>' : ''}
+        ${canReassignLeads() ? '<optgroup label="Reassign to">' + SALES_TEAM.map(c => `<option value="reassign:${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') + '</optgroup>' : ''}
         <option value="archive">Archive</option>
         <option value="delete">Delete</option>
       </select>
@@ -3518,7 +3549,11 @@ function renderQualificationModal(lead) {
 // ========== RENDER: QUALIFIED LEADS ==========
 function renderQualifiedLeads() {
   const container = document.getElementById('qualified-leads-content');
-  const qualified = state.leads.filter(l => l.status === 'qualified' || l.status === 'crm');
+  // MOVE MEANS MOVE: this list used to include status 'crm' too, so a lead you just moved to
+  // the CRM stayed sitting in this grid and the sidebar count never dropped — pressing
+  // "Move to CRM" looked like it did nothing at all. Qualified Leads now holds ONLY leads
+  // still waiting to be moved; once moved, the lead lives in CRM / Outreach.
+  const qualified = state.leads.filter(l => l.status === 'qualified');
   const unqualified = state.leads.filter(l => l.status === 'unqualified');
   const hasUnqual = unqualified.length > 0;
 
@@ -3672,8 +3707,8 @@ function renderCRM() {
         <option value="low"${f.priority==='low'?' selected':''}>Low</option>
       </select>
       <select class="form-select" data-filter="crm-assigned" aria-label="Filter by assigned consultant">
-        <option value="all"${f.assignedTo==='all'?' selected':''}>All Consultants</option>
-        ${CONSULTANTS.map(c => `<option value="${c}"${f.assignedTo===c?' selected':''}>${c}</option>`).join('')}
+        <option value="all"${f.assignedTo==='all'?' selected':''}>All Sales</option>
+        ${ownerOptions(f.assignedTo === 'all' ? '' : f.assignedTo).map(c => `<option value="${c}"${f.assignedTo===c?' selected':''}>${c}</option>`).join('')}
       </select>
       <button class="today-chip${f.today ? ' active' : ''}" data-action="toggle-today-filter" data-scope="crm" aria-pressed="${!!f.today}"><i data-lucide="calendar-clock" aria-hidden="true"></i> Today</button>
       <label class="overdue-check">
@@ -3685,14 +3720,14 @@ function renderCRM() {
         <option value="date"${f.sort==='date'?' selected':''}>Sort by Date</option>
         <option value="name"${f.sort==='name'?' selected':''}>Sort by Name</option>
       </select>
-      ${isConsultant() ? `<label class="consultant-view-toggle"><input type="checkbox" data-filter="crm-show-all" ${f.assignedTo==='all'?'checked':''}> Show all leads</label>` : ''}
+      ${isSalesUser() ? `<label class="consultant-view-toggle"><input type="checkbox" data-filter="crm-show-all" ${f.assignedTo==='all'?'checked':''}> Show all leads</label>` : ''}
       <span class="count-label" id="crm-count"></span>
     </div>
     <div class="bulk-bar${(state.bulkSelection && state.bulkSelection.length) ? ' active' : ''}" id="bulk-bar-crm">
       <span class="bulk-count">${(state.bulkSelection || []).length} selected</span>
       <select class="form-select bulk-action-select" data-action="bulk-action" data-scope="crm" aria-label="Bulk action">
         <option value="">Choose action...</option>
-        ${canReassignLeads() ? '<optgroup label="Reassign to">' + CONSULTANTS.map(c => `<option value="reassign:${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') + '</optgroup>' : ''}
+        ${canReassignLeads() ? '<optgroup label="Reassign to">' + SALES_TEAM.map(c => `<option value="reassign:${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') + '</optgroup>' : ''}
         <optgroup label="Move to stage">${STAGES.map(s => `<option value="stage:${s.num}">${s.name}</option>`).join('')}</optgroup>
         <option value="archive">Archive</option>
         <option value="delete">Delete</option>
@@ -3803,7 +3838,7 @@ function renderCRMList(leads) {
                 <input type="number" min="0" step="500" value="${getDealValue(l)}" data-action="change-deal-value" data-id="${l.id}" aria-label="Deal value">
               </div>
             </div>
-            ${canReassignLeads() ? `<div><label class="form-label">Assigned to</label><select class="reassign-select" data-action="reassign-lead" data-id="${l.id}" aria-label="Reassign lead">${CONSULTANTS.map(c => `<option value="${c}"${l.assignedTo===c?' selected':''}>${c}</option>`).join('')}</select></div>` : (l.assignedTo ? `<div class="assigned-badge"><i data-lucide="user" aria-hidden="true"></i> Assigned: ${escapeHtml(l.assignedTo)}</div>` : '')}
+            ${canReassignLeads() ? `<div><label class="form-label">Assigned to</label><select class="reassign-select" data-action="reassign-lead" data-id="${l.id}" aria-label="Reassign lead">${ownerOptions(l.assignedTo).map(c => `<option value="${escapeHtml(c)}"${l.assignedTo===c?' selected':''}>${escapeHtml(c)}</option>`).join('')}</select></div>` : (l.assignedTo ? `<div class="assigned-badge"><i data-lucide="user" aria-hidden="true"></i> Assigned: ${escapeHtml(l.assignedTo)}</div>` : '')}
           </div>
           <div class="crm-block">
             <div>
@@ -4939,8 +4974,10 @@ document.getElementById('section-lead-bank').addEventListener('click', e => {
   else if (action === 'view-lead') openPanel('view-lead', getLeadById(id));
   else if (action === 'qualify') openModal('qualify', getLeadById(id));
   else if (action === 'move-to-crm') {
+    const __mv = getLeadById(id);
+    const __mvName = (__mv && __mv.businessName) ? __mv.businessName : 'Lead';
     moveToCRM(id);
-    showToast('Lead moved to CRM', 'success');
+    showToast(__mvName + ' moved to CRM / Outreach', 'success');
     renderAll();
   }
   else if (action === 'toggle-today-filter') {
@@ -5009,8 +5046,10 @@ document.getElementById('section-qualified-leads').addEventListener('click', e =
   if (action === 'qualify') openModal('qualify', getLeadById(id));
   else if (action === 'call-lead') openDialer(id, target.dataset.num);
   else if (action === 'move-to-crm') {
+    const __mv = getLeadById(id);
+    const __mvName = (__mv && __mv.businessName) ? __mv.businessName : 'Lead';
     moveToCRM(id);
-    showToast('Lead moved to CRM', 'success');
+    showToast(__mvName + ' moved to CRM / Outreach', 'success');
     renderAll();
   } else if (action === 'view-qual') {
     openPanel('view-qualification', getLeadById(id));
@@ -5677,7 +5716,7 @@ document.getElementById('switch-user-btn').addEventListener('click', () => {
 });
 
 // ========== ACTIVITY MONITOR ==========
-const AM_TEAM_MEMBERS = ['Ayoub Rasol', 'Melusi Ndoro', 'Joshua Khalili', 'Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
+const AM_TEAM_MEMBERS = ['Ayoub Rasol', 'Melusi Ndoro', 'Joshua Khalili', 'Adnan', 'Muneeb Moiz', 'Yousuf Zacky', 'Ameer Munj', 'Amir Hasbullah'];
 const AM_ACTION_TYPES = [
   { value: 'all', label: 'All Actions' },
   { value: 'call', label: 'Calls' },
