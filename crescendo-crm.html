@@ -774,6 +774,70 @@ button { -webkit-tap-highlight-color: transparent; }
 .today-chip.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 .today-chip i { width: 14px; height: 14px; }
 
+/* ========== FOLLOW-UP STRIP (Outreach) ==========
+   What is owed to the rep, on the screen where they work. It used to live only on Home. */
+.followup-strip { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.followup-strip-label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); margin-right: var(--space-1); }
+.followup-strip-label i { width: 14px; height: 14px; }
+.followup-strip-sep { width: 1px; align-self: stretch; background: var(--color-border); margin: 0 var(--space-1); }
+@media (max-width: 900px) { .followup-strip-sep { display: none; } }
+.fu-chip { display: inline-flex; align-items: baseline; gap: 5px; padding: 5px 11px; border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-surface); font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); cursor: pointer; min-height: 34px; transition: background var(--transition-interactive), color var(--transition-interactive), border-color var(--transition-interactive), transform 140ms var(--ease-out); }
+.fu-chip strong { font-family: var(--font-display); font-size: var(--text-base); font-weight: 800; color: var(--color-text); line-height: 1; }
+.fu-chip:hover { border-color: var(--color-primary); color: var(--color-text); }
+.fu-chip:active { transform: scale(0.96); }
+.fu-chip.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.fu-chip.fu-overdue strong { color: var(--color-error); }
+.fu-chip.fu-today strong { color: var(--color-warning); }
+.fu-chip.fu-none strong { color: var(--color-text-faint); }
+.fu-chip.fu-worked strong { color: var(--color-success); }
+.fu-chip.active strong, .fu-chip.active { color: #fff; }
+.kanban-column-tally { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Filtered-view notice: a lead that is merely hidden must never read as a lead that vanished. */
+.filter-notice { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; padding: var(--space-2) var(--space-3); margin-bottom: var(--space-3); border: 1px solid var(--color-primary); background: var(--color-primary-highlight); border-radius: var(--radius-md); font-size: var(--text-xs); color: var(--color-text); }
+.filter-notice i { width: 14px; height: 14px; flex-shrink: 0; }
+.filter-notice .btn { margin-left: auto; }
+
+/* ========== CRM LEAD SHEET (opened from a board card) ========== */
+@keyframes crm-sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes crm-sheet-in { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.crm-sheet-overlay { position: fixed; inset: 0; background: oklch(from var(--color-text) l c h / 0.45); z-index: 90; animation: crm-sheet-fade 160ms var(--ease-out); }
+/* inset+margin:auto centres it without a transform, leaving transform free for the animation. */
+.crm-sheet { position: fixed; z-index: 91; inset: 0; margin: auto; width: min(760px, calc(100vw - 2rem)); height: max-content; max-height: calc(100vh - 3rem); display: flex; flex-direction: column; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: 0 24px 60px oklch(from var(--color-text) l c h / 0.25); animation: crm-sheet-in 200ms var(--ease-out); }
+.crm-sheet-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
+.crm-sheet-nav, .crm-sheet-close { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-surface); color: var(--color-text-muted); cursor: pointer; }
+.crm-sheet-nav:hover:not(:disabled), .crm-sheet-close:hover { color: var(--color-text); border-color: var(--color-primary); }
+.crm-sheet-nav:disabled { opacity: 0.35; cursor: default; }
+.crm-sheet-nav i, .crm-sheet-close i { width: 16px; height: 16px; }
+.crm-sheet-close { margin-left: auto; }
+.crm-sheet-pos { font-size: var(--text-xs); font-weight: 600; color: var(--color-text-muted); }
+.crm-sheet-body { overflow-y: auto; padding: var(--space-4); -webkit-overflow-scrolling: touch; }
+.crm-sheet-contact { padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); background: var(--color-surface-offset); border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 5px; }
+.crm-sheet-person { font-weight: 700; font-size: var(--text-sm); }
+.crm-sheet-line { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); color: var(--color-text-muted); word-break: break-word; }
+.crm-sheet-line i { width: 14px; height: 14px; flex-shrink: 0; }
+.crm-sheet-line a { color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
+.crm-sheet-muted { color: var(--color-text-faint); }
+/* Inside the sheet the record is the whole point — never collapse it. Two columns, not the
+   list view's three: the sheet is 760px wide, not the full page. */
+.crm-sheet .crm-details { display: grid !important; grid-template-columns: 1fr; }
+@media (min-width: 700px) { .crm-sheet .crm-details { grid-template-columns: repeat(2, 1fr); } }
+.crm-sheet .crm-expand-btn, .crm-sheet .bulk-check { display: none !important; }
+.crm-sheet .crm-card { border: none; padding: 0; background: transparent; box-shadow: none; }
+@media (max-width: 700px) {
+  .crm-sheet { inset: auto 0 0 0; margin: 0; width: 100vw; max-height: 88vh; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+}
+
+/* Board card extras: the phone and the day it landed in this column. */
+.card-phone { display: flex; align-items: center; gap: 4px; font-size: var(--text-2xs); color: var(--color-text-muted); margin-top: 2px; }
+.card-phone i { width: 11px; height: 11px; }
+.card-entered { font-size: var(--text-2xs); color: var(--color-text-faint); margin-top: 2px; }
+.kanban-column-today { font-size: var(--text-2xs); font-weight: 700; padding: 2px 7px; border-radius: var(--radius-full); background: var(--color-success-highlight); color: var(--color-success); white-space: nowrap; }
+.crm-entered { color: var(--color-text-faint); }
+.lead-card-phone { display: inline-flex; align-items: center; gap: 4px; color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
+.lead-card-phone i { width: 12px; height: 12px; }
+.lead-card-nophone { color: var(--color-text-faint); }
+
 /* ========== BULK ACTIONS BAR ========== */
 .bulk-bar { display: none; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); background: var(--color-text); color: var(--color-text-inverse); border-radius: var(--radius-lg); animation: slide-down 220ms var(--ease-out); flex-wrap: wrap; }
 .bulk-bar.active { display: flex; }
@@ -1227,7 +1291,8 @@ const state = {
   archiveTab: 'follow_up',
   filters: {
     leadBank: { search: '', status: 'all', source: 'all', assignedTo: 'all', today: false },
-    crm: { search: '', stage: 'all', priority: 'all', overdueOnly: false, assignedTo: 'all', today: false },
+    crm: { search: '', stage: 'all', priority: 'all', overdueOnly: false, assignedTo: 'all', today: false, touchedToday: false, followUp: 'all' },
+    qualified: { search: '', industry: 'all', city: 'all', source: 'all', assignedTo: 'all', hasPhone: false, sort: 'score' },
     archive: {}
   },
   panelOpen: false,
@@ -1240,11 +1305,19 @@ const state = {
   bulkSelection: [],
   bulkScope: null, // 'crm' | 'lead-bank'
   crmDetailsOpen: {},   // per-lead expanded state for the mobile CRM card details
+  crmSheetId: null,     // lead whose full record is open over the board (null = closed)
   lbLimit: 60,          // lead-bank incremental render limit (reset on filter change)
-  crmLimit: 40          // CRM list incremental render limit
+  crmLimit: 40,         // CRM list incremental render limit
+  qualLimit: 60         // qualified-leads incremental render limit
 };
 const LB_PAGE = 60;
 const CRM_PAGE = 40;
+const QUAL_PAGE = 60;
+// Content hash per lead, so saveState can tell which leads a write actually touched.
+// Declared up here, not next to saveState: loadState() seeds it and runs long before that
+// point in the file, and a `const` in the temporal dead zone throws — which loadState swallows,
+// silently dropping every stored lead and booting the app on sample data.
+const __leadHashes = new Map(); // id -> last-seen content hash (set on save & on remote merge)
 
 // ========== CRESCENDO SYNC (Firestore shared backend) ==========
 // Syncs state.leads across all devices so the Master view can see everyone's work.
@@ -2169,12 +2242,38 @@ function isTodayISO(iso) {
   const s = String(iso).slice(0, 10);
   return s === todayISO;
 }
+// DUE today: work that still needs doing. Overdue counts as due.
 function isTodayLead(l) {
   if (!l || !l.crm) return false;
   const fu = daysUntil(l.crm.followUpDate);
   const fuMatch = fu !== null && fu <= 0;
   const meetingToday = l.crm.meetingBooked && l.crm.meetingDate && isTodayISO(l.crm.meetingDate);
   return fuMatch || meetingToday;
+}
+// TOUCHED today: work already done. Reps read "Today" as "what did we do today", and the
+// due-date-only version undercounted badly — a lead moved into Contacted this morning with no
+// follow-up date set simply didn't appear. Anything that dates a lead to today counts.
+function isTouchedToday(l) {
+  if (!l || !l.crm) return false;
+  if (stageEnteredOn(l, l.crm.stage) === todayISO) return true;
+  if (l.crm.dateMovedToCRM === todayISO) return true;
+  if (l.crm.dateLastContact === todayISO) return true;
+  if (l.crm.dateFirstContact === todayISO) return true;
+  if (l.crm.meetingBooked && l.crm.meetingDate && isTodayISO(l.crm.meetingDate)) return true;
+  return (l.activity || []).some(a => a && a.date && String(a.date).split('T')[0] === todayISO);
+}
+// City for filtering, read off the address against the known UK centroid table (same list the
+// Map section uses). Returns '' when the address names no city we recognise.
+const __CITY_KEYS = ['london','manchester','birmingham','leeds','liverpool','bristol','sheffield','edinburgh','glasgow','newcastle','nottingham','leicester','oxford','brighton','cardiff','belfast','norwich','york','cambridge','reading','southampton','portsmouth','coventry','hull','plymouth','aberdeen','dundee','bath','exeter','milton keynes'];
+function leadCity(l) {
+  const addr = (l && typeof l.address === 'string') ? l.address.toLowerCase() : '';
+  if (!addr) return '';
+  for (const c of __CITY_KEYS) { if (addr.includes(c)) return c.replace(/\b\w/g, ch => ch.toUpperCase()); }
+  return '';
+}
+function leadHasPhone(l) {
+  if (!l) return false;
+  return !!((l.phones && l.phones.length) || (l.contacts || []).some(c => c && c.phone));
 }
 function getQualificationScore(lead) {
   if (!lead.qualification) return 0;
@@ -2208,6 +2307,75 @@ const STAGES = [
 ];
 function getStageName(num) { return STAGES.find(s => s.num === num)?.name || 'Unknown'; }
 function getStageBadge(num) { return STAGES.find(s => s.num === num)?.badge || 'badge-neutral'; }
+
+// ===== STAGE DATES =====
+// The pipeline used to record only dateLastContact, so "how many leads went into Contacted
+// today" had no answer — the Today filter fell back to follow-up dates and reported a handful
+// when dozens had actually been moved. Every stage change now stamps the day it happened.
+function recordStageEntry(lead, stageNum) {
+  if (!lead) return;
+  if (!lead.crm) lead.crm = {};
+  if (!lead.crm.stageEnteredAt || typeof lead.crm.stageEnteredAt !== 'object') lead.crm.stageEnteredAt = {};
+  lead.crm.stageEnteredAt[String(stageNum)] = todayISO;
+  lead.crm.stageChangedAt = todayISO;
+}
+// THE single stage-change path. Every caller (dropdown, board arrows, drag, bulk action,
+// meeting completion) goes through here so no route can move a lead without dating it.
+// Returns false when the stage didn't actually change, so callers can skip a pointless save.
+function setStage(lead, newStage, opts) {
+  if (!lead) return false;
+  if (!lead.crm) lead.crm = {};
+  const n = Math.min(6, Math.max(1, parseInt(newStage, 10) || 1));
+  if (n === lead.crm.stage) return false;
+  lead.crm.stage = n;
+  lead.crm.dateLastContact = todayISO;
+  recordStageEntry(lead, n);
+  if (!(opts && opts.silent)) addActivity(lead, 'changed stage to ' + getStageName(n));
+  return true;
+}
+// Leads moved before stage stamping existed carry no stageEnteredAt. Rather than migrate ~540
+// docs (a mass rewrite is exactly the write storm we just removed), read their history back out
+// of the activity log on demand. Memoised per lead so board renders stay cheap.
+const __stageDateCache = new Map();
+function derivedStageDates(lead) {
+  if (!lead) return {};
+  const key = lead.id + '|' + ((lead.activity && lead.activity.length) || 0) + '|' + ((lead.crm && lead.crm.dateMovedToCRM) || '');
+  const hit = __stageDateCache.get(lead.id);
+  if (hit && hit.key === key) return hit.map;
+  const map = {};
+  let last = '';
+  // activity is newest-first; walk it oldest-first so a later move overwrites an earlier one.
+  const acts = (lead.activity || []).slice().reverse();
+  for (const a of acts) {
+    if (!a || typeof a.action !== 'string' || !a.date) continue;
+    const day = String(a.date).split('T')[0];
+    const m = a.action.match(/^changed stage to (.+)$/);
+    if (m) {
+      const st = STAGES.find(s => s.name.toLowerCase() === m[1].trim().toLowerCase());
+      if (st) { map[String(st.num)] = day; last = day; }
+    } else if (a.action === 'moved to CRM') {
+      if (!map['1']) map['1'] = day;
+      if (!last) last = day;
+    }
+  }
+  if (!map['1'] && lead.crm && lead.crm.dateMovedToCRM) map['1'] = lead.crm.dateMovedToCRM;
+  map.__last = last || (lead.crm && lead.crm.dateMovedToCRM) || '';
+  __stageDateCache.set(lead.id, { key, map });
+  return map;
+}
+// The day this lead entered a given stage ('' if unknown).
+function stageEnteredOn(lead, stageNum) {
+  if (!lead || !lead.crm) return '';
+  const stored = lead.crm.stageEnteredAt;
+  if (stored && typeof stored === 'object' && stored[String(stageNum)]) return stored[String(stageNum)];
+  return derivedStageDates(lead)[String(stageNum)] || '';
+}
+// The day this lead last changed stage ('' if unknown).
+function stageChangedOn(lead) {
+  if (!lead || !lead.crm) return '';
+  if (lead.crm.stageChangedAt) return lead.crm.stageChangedAt;
+  return derivedStageDates(lead).__last || '';
+}
 
 const DISPOSITIONS = [
   { value: '', label: 'None', badge: 'badge-neutral' },
@@ -2319,8 +2487,18 @@ function moveToCRM(id) {
   } else if (lead.crm.dealValue == null) {
     lead.crm.dealValue = 15000;
   }
+  // NO DEAD ENDS: a lead landing in Outreach with no follow-up date is invisible to every
+  // due/today view, so it sinks down a score-sorted list and is never seen again. Default it
+  // to today — the rep just decided to work it.
+  if (!lead.crm.followUpDate) lead.crm.followUpDate = todayISO;
+  if (!lead.crm.dateMovedToCRM) lead.crm.dateMovedToCRM = todayISO;
+  recordStageEntry(lead, lead.crm.stage || 1);
   addActivity(lead, 'moved to CRM');
   saveState();
+  // Commit straight away instead of on the 400ms debounce: reps move a lead and immediately
+  // scroll, switch section or lock the phone, and a push lost to a suspended tab is half of
+  // why moves "didn't stick".
+  try { CrescendoSync.flush(); } catch (_) {}
 }
 function updateCRM(id, changes) {
   const lead = getLeadById(id);
@@ -2347,7 +2525,7 @@ function reactivateLead(id) {
   if (!lead) return;
   lead.status = 'crm';
   if (lead.crm) {
-    lead.crm.stage = 1;
+    setStage(lead, 1, { silent: true });
     lead.crm.disposition = 'nurture';
   }
   addActivity(lead, 'reactivated');
@@ -2365,11 +2543,27 @@ function deleteLead(id) {
 // Content hash of a lead EXCLUDING sync-bookkeeping fields, so we can tell which leads a given
 // saveState actually mutated. Re-stamping/pushing all ~540 leads every call blew the 500-op
 // batch limit and amplified writes ~540x (H2). We now stamp only the changed ones.
-const __leadHashes = new Map(); // id -> last-seen content hash (set on save & on remote merge)
+// __leadHashes itself is declared alongside `state` near the top of this script — see the note
+// there for why it cannot live down here.
 function __leadContentHash(l) {
   const o = { ...l };
   delete o._modAt; delete o._modBy; delete o._srvAt; delete o.__remoteStamped;
   return JSON.stringify(o);
+}
+// Record the current content of leads we already know match what is stored/in the cloud.
+// WITHOUT this the ledger is EMPTY on every page load, so the first saveState after a load
+// looked at ~540 unknown leads, decided every one had "changed", re-stamped _modAt on all of
+// them and pushed the lot. Two consequences, both reported from the field:
+//   1. This device's copy — stale if its snapshot hadn't landed yet — was broadcast with a
+//      brand-new timestamp, so it WON the newest-wins merge and reverted other reps' work.
+//      That is why "Move to CRM" appeared to do nothing until you did it again and refreshed.
+//   2. ~540 writes per click burned the daily Firestore write quota in a few dozen saves,
+//      after which every change sat in the retry queue instead of syncing.
+// Seeded on load and after every remote merge, saveState now stamps and pushes ONLY the lead
+// the rep actually touched.
+function seedLeadHashes(list) {
+  if (!Array.isArray(list)) return;
+  for (const l of list) { if (l && l.id) __leadHashes.set(l.id, __leadContentHash(l)); }
 }
 function saveState() {
   // Stamp the sync timestamp ONLY on leads whose content actually changed since the last
@@ -2447,6 +2641,9 @@ function loadState() {
         if (__backfilled) {
           try { localStorage.setItem('crescendo-leads', JSON.stringify(state.leads)); } catch (_) {}
         }
+        // What we just loaded IS what is on disk — nothing here is an unsaved edit, so record
+        // it and let saveState re-stamp only what the rep changes from now on.
+        seedLeadHashes(state.leads);
         return true;
       }
     }
@@ -2721,6 +2918,9 @@ document.getElementById('bottom-nav').addEventListener('click', e => {
 // ========== NAVIGATION ==========
 function showSection(sectionId) {
   state.activeSection = sectionId;
+  // Leaving Outreach closes the open lead record — an overlay that reappears when you come
+  // back reads as a bug, not as resuming.
+  if (sectionId !== 'crm' && state.crmSheetId) { state.crmDetailsOpen[state.crmSheetId] = false; state.crmSheetId = null; }
   document.querySelectorAll('.main-content section').forEach(s => s.classList.remove('active'));
   const sec = document.getElementById('section-' + sectionId);
   if (sec) sec.classList.add('active');
@@ -3569,80 +3769,84 @@ function renderQualificationModal(lead) {
 }
 
 // ========== RENDER: QUALIFIED LEADS ==========
+// Distinct values present in a set of leads, for filter dropdowns. Only ever offers options
+// that will actually match something, so a rep can't filter their way to an empty screen.
+function distinctValues(leads, fn) {
+  const set = new Set();
+  for (const l of leads) { const v = fn(l); if (v) set.add(v); }
+  return Array.from(set).sort((a, b) => a.localeCompare(b));
+}
+function getFilteredQualified() {
+  const f = state.filters.qualified;
+  let leads = state.leads.filter(l => l.status === 'qualified');
+  const totalCount = leads.length;
+  if (f.search) {
+    const s = f.search.toLowerCase();
+    leads = leads.filter(l =>
+      l.businessName.toLowerCase().includes(s) ||
+      (l.description || '').toLowerCase().includes(s) ||
+      (l.contacts || []).some(c => c.name.toLowerCase().includes(s))
+    );
+  }
+  if (f.industry !== 'all') leads = leads.filter(l => (l.industry || '') === f.industry);
+  if (f.city !== 'all') leads = leads.filter(l => leadCity(l) === f.city);
+  if (f.source !== 'all') leads = leads.filter(l => l.source === f.source);
+  if (f.assignedTo !== 'all') leads = leads.filter(l => l.assignedTo === f.assignedTo);
+  if (f.hasPhone) leads = leads.filter(l => leadHasPhone(l));
+
+  const sort = f.sort || 'score';
+  if (sort === 'score') leads.sort((a, b) => getOpportunityScore(b) - getOpportunityScore(a));
+  else if (sort === 'name') leads.sort((a, b) => a.businessName.localeCompare(b.businessName));
+  else if (sort === 'date') leads.sort((a, b) => String((b.qualification && b.qualification.dateQualified) || b.dateAdded || '').localeCompare(String((a.qualification && a.qualification.dateQualified) || a.dateAdded || '')));
+  return { leads, totalCount };
+}
 function renderQualifiedLeads() {
   const container = document.getElementById('qualified-leads-content');
   // MOVE MEANS MOVE: this list used to include status 'crm' too, so a lead you just moved to
   // the CRM stayed sitting in this grid and the sidebar count never dropped — pressing
   // "Move to CRM" looked like it did nothing at all. Qualified Leads now holds ONLY leads
   // still waiting to be moved; once moved, the lead lives in CRM / Outreach.
-  const qualified = state.leads.filter(l => l.status === 'qualified');
+  const f = state.filters.qualified;
+  const all = state.leads.filter(l => l.status === 'qualified');
   const unqualified = state.leads.filter(l => l.status === 'unqualified');
   const hasUnqual = unqualified.length > 0;
+  const industries = distinctValues(all, l => l.industry);
+  const cities = distinctValues(all, l => leadCity(l));
 
   let html = `
     <div class="section-header">
       <h1>Qualified Leads</h1>
     </div>
+    <div class="filter-bar">
+      <input type="text" class="form-input" placeholder="Search qualified leads..." value="${escapeHtml(f.search)}" data-filter="ql-search" aria-label="Search qualified leads">
+      <select class="form-select" data-filter="ql-industry" aria-label="Filter by industry">
+        <option value="all"${f.industry==='all'?' selected':''}>All Industries</option>
+        ${industries.map(i => `<option value="${escapeHtml(i)}"${f.industry===i?' selected':''}>${escapeHtml(i)}</option>`).join('')}
+      </select>
+      <select class="form-select" data-filter="ql-city" aria-label="Filter by city">
+        <option value="all"${f.city==='all'?' selected':''}>All Cities</option>
+        ${cities.map(c => `<option value="${escapeHtml(c)}"${f.city===c?' selected':''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+      <select class="form-select" data-filter="ql-source" aria-label="Filter by source">
+        <option value="all"${f.source==='all'?' selected':''}>All Sources</option>
+        ${SOURCES.map(s => `<option value="${s}"${f.source===s?' selected':''}>${sourceLabel(s)}</option>`).join('')}
+      </select>
+      <select class="form-select" data-filter="ql-assigned" aria-label="Filter by assigned consultant">
+        <option value="all"${f.assignedTo==='all'?' selected':''}>All Sales</option>
+        ${ownerOptions(f.assignedTo === 'all' ? '' : f.assignedTo).map(c => `<option value="${escapeHtml(c)}"${f.assignedTo===c?' selected':''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+      <button class="today-chip${f.hasPhone ? ' active' : ''}" data-action="toggle-qual-phone" aria-pressed="${!!f.hasPhone}"><i data-lucide="phone" aria-hidden="true"></i> Has phone</button>
+      <select class="form-select" data-filter="ql-sort" aria-label="Sort qualified leads">
+        <option value="score"${(f.sort||'score')==='score'?' selected':''}>Sort by Score</option>
+        <option value="date"${f.sort==='date'?' selected':''}>Sort by Date Qualified</option>
+        <option value="name"${f.sort==='name'?' selected':''}>Sort by Name</option>
+      </select>
+      <span class="count-label" id="ql-count"></span>
+    </div>
   `;
 
   html += `<div class="qual-layout${hasUnqual ? '' : ' full-width'}">`;
-
-  // Qualified grid
-  html += '<div>';
-  if (qualified.length === 0) {
-    html += `
-      <div class="empty-state">
-        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="60" cy="60" r="40" stroke="currentColor" stroke-width="2" fill="none"/>
-          <path d="M45 60 L55 70 L75 50" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <h3>No qualified leads yet</h3>
-        <p>Qualify leads from the Lead Bank to see them here.</p>
-      </div>
-    `;
-  } else {
-    // Default sort qualified leads by opportunity score descending
-    qualified.sort((a, b) => getOpportunityScore(b) - getOpportunityScore(a));
-    html += '<div class="lead-grid">';
-    qualified.forEach(l => {
-      const q = l.qualification || {};
-      const score = getQualificationScore(l);
-      const sb = statusBadgeFor(l.status);
-      html += `
-        <div class="card lead-card">
-          <div class="lead-card-header">
-            <div>
-              <div class="lead-card-name">${escapeHtml(l.businessName)}</div>
-              ${l.industry ? `<span class="badge badge-neutral">${escapeHtml(l.industry)}</span>` : ''}
-            </div>
-            <div style="display:flex;align-items:center;gap:var(--space-2);">
-              ${renderScoreBadge(l)}
-              <span class="badge ${sb.cls}">${sb.label}</span>
-            </div>
-          </div>
-          <div class="service-tags">
-            <span class="service-tag ${q.strategyDesign?.trim() ? 'filled' : 'empty'}">Strategy & Design ${q.strategyDesign?.trim() ? '&#10003;' : ''}</span>
-            <span class="service-tag ${q.experienceDesign?.trim() ? 'filled' : 'empty'}">Experience Design ${q.experienceDesign?.trim() ? '&#10003;' : ''}</span>
-            <span class="service-tag ${q.digitalCommerce?.trim() ? 'filled' : 'empty'}">Digital Commerce ${q.digitalCommerce?.trim() ? '&#10003;' : ''}</span>
-          </div>
-          ${q.growthIntent ? `<p class="lead-card-desc" style="-webkit-line-clamp:1;">${escapeHtml(q.growthIntent)}</p>` : ''}
-          <div class="lead-card-meta">
-            <span>${formatDate(q.dateQualified || l.dateAdded)}</span>
-          </div>
-          ${renderAttribution(l)}
-          ${renderClaimBadge(l)}
-          ${renderLastActivity(l)}
-          <div class="lead-card-actions">
-            ${(l.phones && l.phones.length) ? `<button class="btn btn-sm" style="background:var(--color-primary);color:white" data-action="call-lead" data-id="${l.id}"><i data-lucide="phone" aria-hidden="true"></i> Call</button>` : ''}
-            <button class="btn btn-ghost btn-sm" data-action="view-qual" data-id="${l.id}"><i data-lucide="eye" aria-hidden="true"></i> View Full</button>
-            ${l.status === 'qualified' ? `<button class="btn btn-primary btn-sm" data-action="move-to-crm" data-id="${l.id}"><i data-lucide="arrow-right" aria-hidden="true"></i> Move to CRM</button>` : ''}
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-  }
-  html += '</div>';
+  html += '<div id="qualified-list"></div>';
 
   // Unqualified sidebar
   if (hasUnqual) {
@@ -3662,14 +3866,108 @@ function renderQualifiedLeads() {
 
   container.innerHTML = html;
   lucide.createIcons({ nodes: [container] });
+  renderQualifiedList();
+}
+
+// Split out so typing in the search box only re-renders the grid and never destroys the
+// focused input (same pattern as the Lead Bank and CRM toolbars).
+function renderQualifiedList() {
+  const listEl = document.getElementById('qualified-list');
+  if (!listEl) return;
+  const { leads: qualified, totalCount } = getFilteredQualified();
+  const countEl = document.getElementById('ql-count');
+  if (countEl) countEl.textContent = `Showing ${qualified.length} of ${totalCount}`;
+
+  let html = '';
+  if (qualified.length === 0) {
+    html += `
+      <div class="empty-state">
+        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="60" cy="60" r="40" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M45 60 L55 70 L75 50" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>${totalCount === 0 ? 'No qualified leads yet' : 'Nothing matches these filters'}</h3>
+        <p>${totalCount === 0 ? 'Qualify leads from the Lead Bank to see them here.' : 'There are ' + totalCount + ' qualified leads — widen the filters above to see them.'}</p>
+      </div>
+    `;
+  } else {
+    const limit = state.qualLimit || QUAL_PAGE;
+    const visible = qualified.slice(0, limit);
+    html += '<div class="lead-grid">';
+    visible.forEach(l => {
+      const q = l.qualification || {};
+      const sb = statusBadgeFor(l.status);
+      const city = leadCity(l);
+      const phone = (l.phones && l.phones[0] && l.phones[0].number) || ((l.contacts || []).find(c => c && c.phone) || {}).phone || '';
+      html += `
+        <div class="card lead-card">
+          <div class="lead-card-header">
+            <div>
+              <div class="lead-card-name">${escapeHtml(l.businessName)}</div>
+              ${l.industry ? `<span class="badge badge-neutral">${escapeHtml(l.industry)}</span>` : ''}
+              ${city ? `<span class="badge badge-neutral">${escapeHtml(city)}</span>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+              ${renderScoreBadge(l)}
+              <span class="badge ${sb.cls}">${sb.label}</span>
+            </div>
+          </div>
+          <div class="service-tags">
+            <span class="service-tag ${q.strategyDesign?.trim() ? 'filled' : 'empty'}">Strategy & Design ${q.strategyDesign?.trim() ? '&#10003;' : ''}</span>
+            <span class="service-tag ${q.experienceDesign?.trim() ? 'filled' : 'empty'}">Experience Design ${q.experienceDesign?.trim() ? '&#10003;' : ''}</span>
+            <span class="service-tag ${q.digitalCommerce?.trim() ? 'filled' : 'empty'}">Digital Commerce ${q.digitalCommerce?.trim() ? '&#10003;' : ''}</span>
+          </div>
+          ${q.growthIntent ? `<p class="lead-card-desc" style="-webkit-line-clamp:1;">${escapeHtml(q.growthIntent)}</p>` : ''}
+          <div class="lead-card-meta">
+            <span>${formatDate(q.dateQualified || l.dateAdded)}</span>
+            ${phone ? `<a class="lead-card-phone" href="tel:${escapeHtml(String(phone).replace(/[^+0-9]/g,''))}"><i data-lucide="phone" aria-hidden="true"></i> ${escapeHtml(phone)}</a>` : '<span class="lead-card-nophone">No phone</span>'}
+          </div>
+          ${renderAttribution(l)}
+          ${renderClaimBadge(l)}
+          ${renderLastActivity(l)}
+          <div class="lead-card-actions">
+            ${(l.phones && l.phones.length) ? `<button class="btn btn-sm" style="background:var(--color-primary);color:white" data-action="call-lead" data-id="${l.id}"><i data-lucide="phone" aria-hidden="true"></i> Call</button>` : ''}
+            <button class="btn btn-ghost btn-sm" data-action="view-qual" data-id="${l.id}"><i data-lucide="eye" aria-hidden="true"></i> View Full</button>
+            ${l.status === 'qualified' ? `<button class="btn btn-primary btn-sm" data-action="move-to-crm" data-id="${l.id}"><i data-lucide="arrow-right" aria-hidden="true"></i> Move to CRM</button>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+    if (qualified.length > limit) html += renderShowMore('qualified', qualified.length - limit);
+  }
+
+  listEl.innerHTML = html;
+  lucide.createIcons({ nodes: [listEl] });
 }
 
 // ========== RENDER: CRM ==========
 // Split into toolbar (renderCRM) + list (renderCRMListView) so search keystrokes only
 // re-render the list and never destroy the focused input.
+// Which follow-up bucket a lead sits in: 'overdue' | 'today' | 'week' | 'later' | 'none'.
+function followUpBucket(l) {
+  if (!l || !l.crm || !l.crm.followUpDate) return 'none';
+  const d = daysUntil(l.crm.followUpDate);
+  if (d === null) return 'none';
+  if (d < 0) return 'overdue';
+  if (d === 0) return 'today';
+  if (d <= 7) return 'week';
+  return 'later';
+}
+// Counts behind the follow-up strip in Outreach. Reps asked to see what is owed to them here
+// rather than having to go back to Home for it.
+function followUpCounts(leads) {
+  const c = { overdue: 0, today: 0, week: 0, later: 0, none: 0 };
+  for (const l of leads) c[followUpBucket(l)]++;
+  return c;
+}
 function getFilteredCRM() {
   const f = state.filters.crm;
   let leads = state.leads.filter(l => l.status === 'crm');
+  if (f.assignedTo !== 'all') leads = leads.filter(l => l.assignedTo === f.assignedTo);
+  // Cohort = everything this rep is looking at before the narrowing filters. The follow-up
+  // strip counts against this, so its numbers don't collapse the moment you click one of them.
+  const cohort = leads.slice();
   const totalCount = leads.length;
 
   if (f.search) {
@@ -3683,13 +3981,46 @@ function getFilteredCRM() {
   if (f.priority !== 'all') leads = leads.filter(l => l.crm && l.crm.priority === f.priority);
   if (f.overdueOnly) leads = leads.filter(l => l.crm && l.crm.followUpDate && daysUntil(l.crm.followUpDate) !== null && daysUntil(l.crm.followUpDate) <= 0);
   if (f.today) leads = leads.filter(l => isTodayLead(l));
-  if (f.assignedTo !== 'all') leads = leads.filter(l => l.assignedTo === f.assignedTo);
+  if (f.touchedToday) leads = leads.filter(l => isTouchedToday(l));
+  if (f.followUp && f.followUp !== 'all') leads = leads.filter(l => followUpBucket(l) === f.followUp);
 
   const crmSort = f.sort || 'score';
   if (crmSort === 'score') leads.sort((a, b) => getOpportunityScore(b) - getOpportunityScore(a));
   else if (crmSort === 'name') leads.sort((a, b) => a.businessName.localeCompare(b.businessName));
+  // "Sort by Date" was in the dropdown but did nothing, so a lead you had just moved in stayed
+  // buried wherever its score put it — part of why moved leads felt lost. Newest movement first.
+  else if (crmSort === 'date') leads.sort((a, b) => String(crmTouchedOn(b)).localeCompare(String(crmTouchedOn(a))));
 
-  return { leads, totalCount };
+  return { leads, totalCount, cohort };
+}
+// Best available "when did this lead last move" date, for date sorting and the card sub-line.
+function crmTouchedOn(l) {
+  if (!l || !l.crm) return '';
+  const acts = l.activity && l.activity[0] && l.activity[0].date ? String(l.activity[0].date).split('T')[0] : '';
+  return [acts, stageChangedOn(l), l.crm.dateLastContact || '', l.crm.dateMovedToCRM || ''].sort().pop() || '';
+}
+// Which narrowing filters are on. Shown as a clearable banner so a lead that has simply been
+// filtered out of view never reads as a lead that failed to move.
+function activeCRMFilters() {
+  const f = state.filters.crm;
+  const on = [];
+  if (f.search) on.push({ key: 'search', label: 'Search "' + f.search + '"' });
+  if (f.stage !== 'all') on.push({ key: 'stage', label: getStageName(parseInt(f.stage)) });
+  if (f.priority !== 'all') on.push({ key: 'priority', label: f.priority + ' priority' });
+  if (f.overdueOnly) on.push({ key: 'overdue', label: 'Overdue only' });
+  if (f.today) on.push({ key: 'today', label: 'Due today' });
+  if (f.touchedToday) on.push({ key: 'touchedToday', label: 'Worked today' });
+  if (f.followUp && f.followUp !== 'all') on.push({ key: 'followUp', label: FOLLOW_UP_LABELS[f.followUp] || f.followUp });
+  if (f.assignedTo !== 'all') on.push({ key: 'assigned', label: f.assignedTo });
+  return on;
+}
+const FOLLOW_UP_LABELS = { overdue: 'Overdue', today: 'Due today', week: 'Next 7 days', later: 'Later', none: 'No follow-up set' };
+function clearCRMFilters() {
+  const f = state.filters.crm;
+  f.search = ''; f.stage = 'all'; f.priority = 'all'; f.overdueOnly = false;
+  f.today = false; f.touchedToday = false; f.followUp = 'all'; f.assignedTo = 'all';
+  savePrefs();
+  state.crmLimit = CRM_PAGE;
 }
 
 function renderCRM() {
@@ -3699,6 +4030,10 @@ function renderCRM() {
   // Pipeline values across the full CRM cohort (not just filtered)
   const pipeLeads = state.leads.filter(l => l.status === 'crm');
   const pipe = computePipeline(pipeLeads);
+  const cohort = f.assignedTo === 'all' ? pipeLeads : pipeLeads.filter(l => l.assignedTo === f.assignedTo);
+  const fu = followUpCounts(cohort);
+  const workedToday = cohort.filter(isTouchedToday).length;
+  const activeFilters = activeCRMFilters();
 
   container.innerHTML = `
     <div class="section-header">
@@ -3716,6 +4051,23 @@ function renderCRM() {
       <div class="pipeline-stat"><span class="pipeline-stat-value">${formatMoney(pipe.weighted)}</span><span class="pipeline-stat-label">weighted forecast</span></div>
       <div class="pipeline-meta">${pipe.openCount} open &middot; ${pipe.wonCount} won</div>
     </div>
+    <div class="followup-strip" role="group" aria-label="Follow-ups">
+      <span class="followup-strip-label"><i data-lucide="bell" aria-hidden="true"></i> Follow-ups</span>
+      <button class="fu-chip fu-overdue${f.followUp==='overdue'?' active':''}" data-action="follow-up-filter" data-bucket="overdue" aria-pressed="${f.followUp==='overdue'}"><strong>${fu.overdue}</strong> overdue</button>
+      <button class="fu-chip fu-today${f.followUp==='today'?' active':''}" data-action="follow-up-filter" data-bucket="today" aria-pressed="${f.followUp==='today'}"><strong>${fu.today}</strong> due today</button>
+      <button class="fu-chip${f.followUp==='week'?' active':''}" data-action="follow-up-filter" data-bucket="week" aria-pressed="${f.followUp==='week'}"><strong>${fu.week}</strong> next 7 days</button>
+      <button class="fu-chip${f.followUp==='later'?' active':''}" data-action="follow-up-filter" data-bucket="later" aria-pressed="${f.followUp==='later'}"><strong>${fu.later}</strong> later</button>
+      <button class="fu-chip fu-none${f.followUp==='none'?' active':''}" data-action="follow-up-filter" data-bucket="none" aria-pressed="${f.followUp==='none'}"><strong>${fu.none}</strong> no date set</button>
+      <span class="followup-strip-sep"></span>
+      <button class="fu-chip fu-worked${f.touchedToday?' active':''}" data-action="toggle-worked-today" aria-pressed="${!!f.touchedToday}"><strong>${workedToday}</strong> worked today</button>
+    </div>
+    ${activeFilters.length ? `
+      <div class="filter-notice">
+        <i data-lucide="filter" aria-hidden="true"></i>
+        <span>Filtered by ${activeFilters.map(x => escapeHtml(x.label)).join(' &middot; ')} — leads outside this are hidden, not missing.</span>
+        <button class="btn btn-ghost btn-sm" data-action="clear-crm-filters">Clear filters</button>
+      </div>
+    ` : ''}
     <div class="filter-bar">
       <input type="text" class="form-input" placeholder="Search by name or contact..." value="${escapeHtml(f.search)}" data-filter="crm-search" aria-label="Search CRM">
       <select class="form-select" data-filter="crm-stage" aria-label="Filter by stage">
@@ -3732,7 +4084,7 @@ function renderCRM() {
         <option value="all"${f.assignedTo==='all'?' selected':''}>All Sales</option>
         ${ownerOptions(f.assignedTo === 'all' ? '' : f.assignedTo).map(c => `<option value="${c}"${f.assignedTo===c?' selected':''}>${c}</option>`).join('')}
       </select>
-      <button class="today-chip${f.today ? ' active' : ''}" data-action="toggle-today-filter" data-scope="crm" aria-pressed="${!!f.today}"><i data-lucide="calendar-clock" aria-hidden="true"></i> Today</button>
+      <button class="today-chip${f.today ? ' active' : ''}" data-action="toggle-today-filter" data-scope="crm" aria-pressed="${!!f.today}"><i data-lucide="calendar-clock" aria-hidden="true"></i> Due today</button>
       <label class="overdue-check">
         <input type="checkbox" data-filter="crm-overdue" ${f.overdueOnly ? 'checked' : ''}>
         <span>Overdue only</span>
@@ -3757,6 +4109,7 @@ function renderCRM() {
       <button class="btn btn-ghost btn-sm" data-action="bulk-clear">Clear selection</button>
     </div>
     <div id="crm-list"></div>
+    <div id="crm-sheet"></div>
   `;
   lucide.createIcons({ nodes: [container] });
   renderCRMListView();
@@ -3776,6 +4129,62 @@ function renderCRMListView() {
   }
   lucide.createIcons({ nodes: [listEl] });
   if (state.crmView === 'board') initKanbanDrag();
+  renderCRMSheet(leads);
+}
+
+// Full record for one lead, opened by tapping a board card. It lives INSIDE #section-crm on
+// purpose: every control in it is the same markup as the list view, so the section's existing
+// delegated handlers drive it with no duplicate wiring. Prev/Next walk the leads currently on
+// screen, in the same order, so a rep can work a column one lead at a time.
+function renderCRMSheet(leads) {
+  const host = document.getElementById('crm-sheet');
+  if (!host) return;
+  const id = state.crmSheetId;
+  if (!id) { host.innerHTML = ''; return; }
+  const lead = getLeadById(id);
+  if (!lead || lead.status !== 'crm') { state.crmSheetId = null; host.innerHTML = ''; return; }
+  const order = (leads || []).map(l => l.id);
+  const idx = order.indexOf(id);
+  const pos = idx >= 0 ? `${idx + 1} of ${order.length}` : '';
+  const pc = getPrimaryContact(lead);
+  const phones = (lead.phones || []).map(p => p && p.number).filter(Boolean);
+  if (pc && pc.phone && !phones.includes(pc.phone)) phones.push(pc.phone);
+  const emails = (lead.emails || []).map(e => e && e.address).filter(Boolean);
+  if (pc && pc.email && !emails.includes(pc.email)) emails.push(pc.email);
+  // Details always open in the sheet — the whole point of opening it is to see them.
+  state.crmDetailsOpen[id] = true;
+  host.innerHTML = `
+    <div class="crm-sheet-overlay" data-action="close-crm-sheet"></div>
+    <div class="crm-sheet" role="dialog" aria-modal="true" aria-label="${escapeHtml(lead.businessName)}">
+      <div class="crm-sheet-bar">
+        <button class="crm-sheet-nav" data-action="crm-sheet-nav" data-dir="-1" ${idx <= 0 ? 'disabled' : ''} aria-label="Previous lead"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+        <span class="crm-sheet-pos">${pos}</span>
+        <button class="crm-sheet-nav" data-action="crm-sheet-nav" data-dir="1" ${idx < 0 || idx >= order.length - 1 ? 'disabled' : ''} aria-label="Next lead"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
+        <button class="crm-sheet-close" data-action="close-crm-sheet" aria-label="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+      </div>
+      <div class="crm-sheet-body">
+        <div class="crm-sheet-contact">
+          ${pc ? `<div class="crm-sheet-person">${escapeHtml(pc.name)}${pc.title ? ' &middot; ' + escapeHtml(pc.title) : ''}</div>` : ''}
+          ${lead.address ? `<div class="crm-sheet-line"><i data-lucide="map-pin" aria-hidden="true"></i> ${escapeHtml(lead.address)}</div>` : ''}
+          ${phones.length ? phones.map(p => `<div class="crm-sheet-line"><i data-lucide="phone" aria-hidden="true"></i> <a href="tel:${escapeHtml(String(p).replace(/[^+0-9]/g,''))}">${escapeHtml(p)}</a></div>`).join('') : '<div class="crm-sheet-line crm-sheet-muted">No phone on file</div>'}
+          ${emails.map(em => `<div class="crm-sheet-line"><i data-lucide="mail" aria-hidden="true"></i> <a href="mailto:${escapeHtml(em)}">${escapeHtml(em)}</a></div>`).join('')}
+          ${lead.website ? `<div class="crm-sheet-line"><i data-lucide="globe" aria-hidden="true"></i> <a href="${escapeHtml(lead.website)}" target="_blank" rel="noopener">${escapeHtml(lead.website)}</a></div>` : ''}
+        </div>
+        ${renderCRMList([lead])}
+      </div>
+    </div>
+  `;
+  lucide.createIcons({ nodes: [host] });
+}
+function openCRMSheet(id) {
+  state.crmSheetId = id;
+  renderCRMListView();
+}
+function closeCRMSheet() {
+  if (!state.crmSheetId) return;
+  state.crmDetailsOpen[state.crmSheetId] = false;
+  state.crmSheetId = null;
+  renderCRMListView();
 }
 
 function renderCRMList(leads) {
@@ -3810,7 +4219,8 @@ function renderCRMList(leads) {
     // On phones the card starts as a compact summary; the chevron opens the full editor.
     // On desktop the details are always visible (CSS forces them open).
     const detailsOpen = !!state.crmDetailsOpen[l.id];
-    const hasPhone = !!((l.phones && l.phones.length) || (l.contacts || []).some(c => c && c.phone));
+    const hasPhone = leadHasPhone(l);
+    const enteredOn = stageEnteredOn(l, crm.stage);
     html += `
       <div class="card crm-card${selected ? ' selected' : ''}" id="crm-row-${l.id}">
         <div class="crm-head">
@@ -3825,6 +4235,7 @@ function renderCRMList(leads) {
               ${pc ? `<span>${escapeHtml(pc.name)}${pc.title ? ' · ' + escapeHtml(pc.title) : ''}</span>` : ''}
               ${l.industry ? `<span>${escapeHtml(l.industry)}</span>` : ''}
               <span class="badge deal-badge" title="Deal value">${formatMoney(getDealValue(l))}</span>
+              ${enteredOn ? `<span class="crm-entered">${enteredOn === todayISO ? 'Moved to ' + getStageName(crm.stage) + ' today' : 'In ' + getStageName(crm.stage) + ' since ' + formatDate(enteredOn)}</span>` : ''}
             </div>
             <div class="crm-badges">
               <span class="badge ${getStageBadge(crm.stage)}">${getStageName(crm.stage)}</span>
@@ -3970,11 +4381,17 @@ function renderCRMBoard(leads) {
   STAGES.forEach(stage => {
     const stageLeads = leads.filter(l => l.crm && l.crm.stage === stage.num);
     const visible = stageLeads.slice(0, PER_COL);
+    // How many landed in THIS stage today. The old board showed a single total, so there was
+    // no way to answer "how many did the team move into Contacted today" without guessing.
+    const todayCount = stageLeads.filter(l => stageEnteredOn(l, stage.num) === todayISO).length;
     html += `
       <div class="kanban-column" data-stage="${stage.num}">
         <div class="kanban-column-header">
           <span class="kanban-column-title">${stage.name}</span>
-          <span class="kanban-column-count">${stageLeads.length}</span>
+          <span class="kanban-column-tally">
+            ${todayCount ? `<span class="kanban-column-today" title="Moved into ${stage.name} today">+${todayCount} today</span>` : ''}
+            <span class="kanban-column-count">${stageLeads.length}</span>
+          </span>
         </div>
         <div class="kanban-cards" data-stage="${stage.num}">
           ${visible.map(l => {
@@ -3982,10 +4399,14 @@ function renderCRMBoard(leads) {
             const crm = l.crm;
             const priorityColors = { high: 'badge-error', medium: 'badge-orange', low: 'badge-neutral' };
             const fuDays = daysUntil(crm.followUpDate);
+            const enteredOn = stageEnteredOn(l, stage.num);
+            const phone = (l.phones && l.phones[0] && l.phones[0].number) || (pc && pc.phone) || '';
             return `
-              <div class="kanban-card" draggable="true" data-id="${l.id}">
+              <div class="kanban-card" draggable="true" data-id="${l.id}" data-action="open-crm-sheet" role="button" tabindex="0" aria-label="Open ${escapeHtml(l.businessName)}">
                 <div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-2);"><div class="card-name">${escapeHtml(l.businessName)}</div>${renderScoreBadge(l)}</div>
                 ${pc ? `<div class="card-contact">${escapeHtml(pc.name)}</div>` : ''}
+                ${phone ? `<div class="card-phone"><i data-lucide="phone" aria-hidden="true"></i> ${escapeHtml(phone)}</div>` : ''}
+                ${enteredOn ? `<div class="card-entered">${enteredOn === todayISO ? 'Moved here today' : 'Here since ' + formatDate(enteredOn)}</div>` : ''}
                 <div class="card-meta">
                   <span class="badge ${priorityColors[crm.priority]}">${crm.priority}</span>
                   <span class="badge deal-badge" title="Deal value">${formatMoney(getDealValue(l))}</span>
@@ -4045,10 +4466,7 @@ function initKanbanDrag() {
       const newStage = parseInt(col.dataset.stage);
       if (draggedId && newStage) {
         const lead = getLeadById(draggedId);
-        if (lead && lead.crm) {
-          lead.crm.stage = newStage;
-          lead.crm.dateLastContact = todayISO;
-          addActivity(lead, 'changed stage to ' + getStageName(newStage));
+        if (lead && lead.crm && setStage(lead, newStage)) {
           saveState();
           showToast(`${lead.businessName} moved to ${getStageName(newStage)}`, 'info');
           renderCRM();
@@ -4930,6 +5348,7 @@ document.addEventListener('keydown', e => {
     if (isMoreSheetOpen()) { closeMoreSheet(); return; }
     if (state.modalOpen) closeModal();
     else if (state.panelOpen) closePanel();
+    else if (state.crmSheetId) closeCRMSheet();
   }
 });
 
@@ -5075,7 +5494,39 @@ document.getElementById('section-qualified-leads').addEventListener('click', e =
     renderAll();
   } else if (action === 'view-qual') {
     openPanel('view-qualification', getLeadById(id));
+  } else if (action === 'toggle-qual-phone') {
+    state.filters.qualified.hasPhone = !state.filters.qualified.hasPhone;
+    savePrefs();
+    state.qualLimit = QUAL_PAGE;
+    renderQualifiedLeads();
+  } else if (action === 'show-more') {
+    state.qualLimit = (state.qualLimit || QUAL_PAGE) + QUAL_PAGE;
+    renderQualifiedList();
   }
+});
+document.getElementById('section-qualified-leads').addEventListener('input', e => {
+  // List-only re-render: replacing the toolbar would destroy this input mid-keystroke.
+  if (e.target.dataset.filter === 'ql-search') {
+    state.filters.qualified.search = e.target.value;
+    savePrefs();
+    state.qualLimit = QUAL_PAGE;
+    renderQualifiedList();
+  }
+});
+document.getElementById('section-qualified-leads').addEventListener('change', e => {
+  const f = e.target.dataset.filter;
+  if (!f) return;
+  const q = state.filters.qualified;
+  if (f === 'ql-search') q.search = e.target.value;
+  else if (f === 'ql-industry') q.industry = e.target.value;
+  else if (f === 'ql-city') q.city = e.target.value;
+  else if (f === 'ql-source') q.source = e.target.value;
+  else if (f === 'ql-assigned') q.assignedTo = e.target.value;
+  else if (f === 'ql-sort') q.sort = e.target.value;
+  else return;
+  savePrefs();
+  state.qualLimit = QUAL_PAGE;
+  renderQualifiedList();
 });
 
 // CRM events
@@ -5086,11 +5537,42 @@ document.getElementById('section-crm').addEventListener('click', e => {
   const id = target.dataset.id;
 
   if (action === 'call-lead') { openDialer(id, target.dataset.num); return; }
+  if (action === 'open-crm-sheet') { openCRMSheet(id); return; }
+  if (action === 'close-crm-sheet') { closeCRMSheet(); return; }
+  if (action === 'crm-sheet-nav') {
+    const { leads } = getFilteredCRM();
+    const order = leads.map(l => l.id);
+    const i = order.indexOf(state.crmSheetId) + parseInt(target.dataset.dir, 10);
+    if (i >= 0 && i < order.length) {
+      state.crmDetailsOpen[state.crmSheetId] = false;
+      openCRMSheet(order[i]);
+    }
+    return;
+  }
+  if (action === 'follow-up-filter') {
+    const b = target.dataset.bucket;
+    // Second tap on the active chip clears it — reps get stuck in a filter otherwise.
+    state.filters.crm.followUp = (state.filters.crm.followUp === b) ? 'all' : b;
+    savePrefs();
+    state.crmLimit = CRM_PAGE;
+    renderCRM();
+    return;
+  }
+  if (action === 'toggle-worked-today') {
+    state.filters.crm.touchedToday = !state.filters.crm.touchedToday;
+    savePrefs();
+    state.crmLimit = CRM_PAGE;
+    renderCRM();
+    return;
+  }
+  if (action === 'clear-crm-filters') { clearCRMFilters(); renderCRM(); return; }
   if (action === 'generate-email') {
     const lead = getLeadById(id);
     if (lead) openModal('email', lead);
     return;
   } else if (action === 'crm-view') {
+    // The sheet reuses the list card markup, so it must not co-exist with the list view.
+    state.crmSheetId = null;
     state.crmView = target.dataset.view;
     savePrefs();
     renderCRM();
@@ -5109,10 +5591,7 @@ document.getElementById('section-crm').addEventListener('click', e => {
     const lead = getLeadById(id);
     if (lead && lead.crm) {
       const ns = Math.min(6, Math.max(1, (lead.crm.stage || 1) + parseInt(target.dataset.dir, 10)));
-      if (ns !== lead.crm.stage) {
-        lead.crm.stage = ns;
-        lead.crm.dateLastContact = todayISO;
-        addActivity(lead, 'changed stage to ' + getStageName(ns));
+      if (setStage(lead, ns)) {
         saveState();
         if (ns === 6) openOutcomeReasonModal(id, 'won');
         else showToast(`${lead.businessName} moved to ${getStageName(ns)}`, 'info');
@@ -5216,18 +5695,14 @@ document.getElementById('section-crm').addEventListener('change', e => {
       const newStageNum = parseInt(e.target.value);
       // Prompt for win reason when moving to Closed Won (stage 6)
       if (newStageNum === 6 && lead.crm.stage !== 6) {
-        lead.crm.stage = 6;
-        lead.crm.dateLastContact = todayISO;
-        addActivity(lead, 'changed stage to Closed Won');
+        setStage(lead, 6);
         saveState();
         openOutcomeReasonModal(id, 'won');
         renderCRM();
         renderSidebarBadges();
         return;
       }
-      lead.crm.stage = newStageNum;
-      lead.crm.dateLastContact = todayISO;
-      addActivity(lead, 'changed stage to ' + getStageName(newStageNum));
+      setStage(lead, newStageNum);
       saveState();
       const row = document.getElementById('crm-row-' + id);
       if (row) row.classList.add('stage-updated');
@@ -5328,8 +5803,7 @@ document.getElementById('section-meetings').addEventListener('click', e => {
   } else if (action === 'mark-meeting-complete') {
     const lead = getLeadById(id);
     if (lead && lead.crm) {
-      lead.crm.stage = 4;
-      lead.crm.dateLastContact = todayISO;
+      setStage(lead, 4);
       saveState();
       showToast('Meeting marked as completed', 'success');
       renderAll();
@@ -6310,12 +6784,7 @@ async function applyBulkAction(scope, value) {
     const s = parseInt(value.slice('stage:'.length));
     ids.forEach(id => {
       const l = getLeadById(id);
-      if (l && l.crm) {
-        l.crm.stage = s;
-        l.crm.dateLastContact = todayISO;
-        addActivity(l, 'changed stage to ' + getStageName(s));
-        n++;
-      }
+      if (l && l.crm && setStage(l, s)) n++;
     });
   } else if (value === 'archive') {
     ids.forEach(id => { archiveLead(id, 'archived'); n++; });
@@ -7503,8 +7972,13 @@ async function startSharedSync() {
       // applyingRemote guard makes pushLeads a no-op — calling it inline did nothing,
       // so offline work only reached the cloud on the rep's NEXT edit.
       setTimeout(() => { try { CrescendoSync.pushLeads(state.leads); } catch (_) {} }, 0);
-      // Clear the per-merge stamp markers now that this snapshot is fully applied.
+      // Clear the per-merge stamp markers now that this snapshot is fully applied, and record
+      // every merged lead's content. Without the seed, the next saveState would treat all ~540
+      // leads as changed and republish the whole book over other reps' newer work — see
+      // seedLeadHashes. A local copy that WON the merge keeps its own fresher _modAt, and its
+      // push is still due because the sync ledger holds the remote version, not this one.
       for (const l of state.leads) { if (l) delete l.__remoteStamped; }
+      seedLeadHashes(state.leads);
       if (typeof renderAll === 'function') renderAll();
     });
     // First-EVER seed-push: only when the cloud is genuinely empty (fresh setup) AND our
