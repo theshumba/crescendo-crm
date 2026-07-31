@@ -837,6 +837,9 @@ button { -webkit-tap-highlight-color: transparent; }
 .lead-card-phone { display: inline-flex; align-items: center; gap: 4px; color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
 .lead-card-phone i { width: 12px; height: 12px; }
 .lead-card-nophone { color: var(--color-text-faint); }
+.qual-bulk-row { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
+.lead-card .bulk-check { margin-right: 6px; vertical-align: -1px; }
+.lead-card.selected { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary) inset; }
 
 /* ========== BULK ACTIONS BAR ========== */
 .bulk-bar { display: none; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); margin-bottom: var(--space-3); background: var(--color-text); color: var(--color-text-inverse); border-radius: var(--radius-lg); animation: slide-down 220ms var(--ease-out); flex-wrap: wrap; }
@@ -1306,6 +1309,7 @@ const state = {
   bulkScope: null, // 'crm' | 'lead-bank'
   crmDetailsOpen: {},   // per-lead expanded state for the mobile CRM card details
   crmSheetId: null,     // lead whose full record is open over the board (null = closed)
+  pendingCall: null,    // {id, at} — lead just dialled, outcome asked for on return
   lbLimit: 60,          // lead-bank incremental render limit (reset on filter change)
   crmLimit: 40,         // CRM list incremental render limit
   qualLimit: 60         // qualified-leads incremental render limit
@@ -1344,6 +1348,10 @@ const CrescendoSync = (function () {
   let firstSnapshotSeen = false;    // becomes true after the first remote snapshot arrives
   let cloudWasEmpty = false;        // true only if that first snapshot had ZERO docs
   const pendingDeletes = new Set(); // lead ids the app has EXPLICITLY deleted (scoped delete safety)
+  // Lead ids this device has edited but not yet had CONFIRMED by the cloud. The merge must
+  // never let a remote copy win over one of these, or the rep watches their own change undo
+  // itself. Set the moment saveState stamps a lead, cleared only on a confirmed commit.
+  const pendingLocal = new Set();
 
   function isConfigured() {
     const c = window.CRESCENDO_FIREBASE_CONFIG;
@@ -1474,6 +1482,7 @@ const CrescendoSync = (function () {
   function _opDone(op) {
     if (op.del) { pendingDeletes.delete(op.id); lastPushed.delete(op.id); }
     else lastPushed.set(op.id, op.echo);
+    pendingLocal.delete(op.id);   // the cloud now has this device's version
     lastSyncedAt = new Date();
   }
 
@@ -1516,7 +1525,7 @@ const CrescendoSync = (function () {
       }
       if (permanent.length && !warnedCreateBlocked) {
         warnedCreateBlocked = true;
-        try { showToast('New leads stay on this device for now — cloud lead creation is locked. Updates still sync.', 'warning'); } catch (_) {}
+        try { showToast('New leads stay on this device for now, cloud lead creation is locked. Updates still sync.', 'warning'); } catch (_) {}
       }
       if (transient.length) {
         pendingPush = true;
@@ -1593,7 +1602,11 @@ const CrescendoSync = (function () {
 
   // Mark a lead id for cloud deletion on the next push (explicit deletes only).
   function queueDelete(id) { if (id != null) pendingDeletes.add(String(id)); }
-  return { init, subscribe, pushLeads, flush, isConfigured, showSyncStatus, queueDelete };
+  function markLocalEdit(id) { if (id) pendingLocal.add(String(id)); }
+  function hasUnsyncedEdit(id) { return pendingLocal.has(String(id)); }
+  function pendingCount() { return pendingLocal.size; }
+  return { init, subscribe, pushLeads, flush, isConfigured, showSyncStatus, queueDelete,
+           markLocalEdit, hasUnsyncedEdit, pendingCount };
 })();
 
 // ========== USER SESSION ==========
@@ -1909,14 +1922,51 @@ async function openDialer(id, num) {
   }
   if (!phone) { showToast('No phone number on this lead', 'warning'); return; }
   claimLead(lead);
+  // Remember who we just rang so the app can ask how it went the moment the rep comes back.
+  // Nothing prompted for an outcome before, so calls went unlogged, follow-up dates never got
+  // set, and the pipeline counts read far lower than the work actually done.
+  state.pendingCall = { id: lead.id, at: Date.now() };
   // Commit the claim NOW — tel: navigation suspends the page and would drop the debounced push (H1).
   try { CrescendoSync.flush(); } catch (_) { /* best-effort; still dial below */ }
   window.location.href = 'tel:' + String(phone).replace(/[^+0-9]/g, '');
   if (typeof renderAll === 'function') renderAll();
 }
+// "How did that call go?" — shown once, when the rep returns to the app after dialling.
+// Dismissing it is free; the point is that logging becomes one tap instead of a trip back to
+// the lead's card, which is the difference between a pipeline that reflects reality and one
+// that doesn't.
+let _askingCallOutcome = false;
+async function askPendingCallOutcome() {
+  const p = state.pendingCall;
+  if (!p || _askingCallOutcome) return;
+  // Older than 30 minutes and it isn't "just now" any more — drop it rather than nag.
+  if (Date.now() - p.at > 30 * 60 * 1000) { state.pendingCall = null; return; }
+  const lead = getLeadById(p.id);
+  if (!lead) { state.pendingCall = null; return; }
+  state.pendingCall = null;
+  _askingCallOutcome = true;
+  try {
+    const outcome = await showActionSheet({
+      title: 'How did that call go?',
+      message: lead.businessName,
+      options: CALL_OUTCOMES.map(o => ({ label: o.label, value: o.value, icon: 'phone' }))
+    });
+    if (!outcome) return;
+    const wasStage = (lead.crm || {}).stage;
+    logCall(lead.id, outcome);
+    let msg = 'Call logged: ' + callOutcomeLabel(outcome);
+    if (lead.crm) {
+      if (lead.crm.stage !== wasStage) msg += ' · moved to ' + getStageName(lead.crm.stage);
+      if (outcome !== 'not_interested' && lead.crm.followUpDate) msg += ' · follow up ' + formatDate(lead.crm.followUpDate);
+    }
+    showToast(msg, 'success');
+    if (outcome === 'not_interested') openOutcomeReasonModal(lead.id, 'not_interested');
+    renderAll();
+  } finally { _askingCallOutcome = false; }
+}
 // ===== CALL OUTCOME LOGGING (synced activity + last-contact stamp) =====
 const CALL_OUTCOMES = [
-  { value: 'connected', label: 'Connected – spoke to contact' },
+  { value: 'connected', label: 'Connected · spoke to contact' },
   { value: 'gatekeeper', label: 'Reached gatekeeper' },
   { value: 'voicemail', label: 'Left voicemail' },
   { value: 'no_answer', label: 'No answer' },
@@ -1925,7 +1975,21 @@ const CALL_OUTCOMES = [
   { value: 'not_interested', label: 'Not interested' }
 ];
 function callOutcomeLabel(v) { return (CALL_OUTCOMES.find(o => o.value === v) || {}).label || v; }
-// Logs a call attempt + its disposition as a synced activity entry and stamps last-contact.
+// What each outcome means for the next step. Logging a call used to leave the follow-up date
+// untouched, so a lead you rang and missed dropped out of every due view and was never rung
+// again — 200+ leads sat in the pipeline with no date on them. Every outcome now books the
+// next action itself. `spoke` outcomes are the ones that prove a human conversation happened.
+const CALL_NEXT_STEP = {
+  connected:      { days: 7, spoke: true },
+  gatekeeper:     { days: 2, spoke: true },
+  callback:       { days: 1, spoke: true },
+  voicemail:      { days: 3, spoke: false },
+  no_answer:      { days: 2, spoke: false },
+  wrong_number:   { days: 5, spoke: false },
+  not_interested: { days: 0, spoke: true }
+};
+// Logs a call attempt + its disposition as a synced activity entry, stamps last-contact,
+// books the follow-up, and advances the stage when the rep actually got through.
 function logCall(id, outcome) {
   const lead = getLeadById(id);
   if (!lead || !outcome) return;
@@ -1934,9 +1998,18 @@ function logCall(id, outcome) {
   if (!lead.crm.dateFirstContact) lead.crm.dateFirstContact = todayISO;
   tagWorker(lead);
   addActivity(lead, 'logged call (' + callOutcomeLabel(outcome) + ')');
+  const rule = CALL_NEXT_STEP[outcome] || { days: 3, spoke: false };
+  // NO DEAD ENDS: always leave a date on the lead. "Not interested" is the one exception —
+  // the archive flow that follows decides what happens to it.
+  if (outcome !== 'not_interested') lead.crm.followUpDate = daysFromNow(rule.days);
+  // Reaching a human means the lead really is Contacted. Reps were logging calls all day and
+  // the board never moved, which is why the Contacted column read far lower than reality.
+  // Only ever forward, and only off the first stage — never demote a lead further down.
+  if (rule.spoke && outcome !== 'not_interested' && (lead.crm.stage || 1) < 2) setStage(lead, 2);
   // Calling is the most important rep action — also release the active-call lock.
   if (typeof releaseLead === 'function') releaseLead(lead);
   saveState();
+  try { CrescendoSync.flush(); } catch (_) {}
 }
 function renderAttribution(lead) {
   let parts = [];
@@ -1965,17 +2038,29 @@ function formatTimeAgo(isoDate) {
 
 // ========== SEED DATA ==========
 const today = new Date();
-const todayISO = today.toISOString().split('T')[0];
+// LOCAL date, not toISOString() — that returns UTC, so between midnight and 1am BST every
+// "today" in the app read as yesterday. And `let`, not `const`: reps leave this open on a
+// phone for days, and a todayISO frozen at page load quietly stops counting today's work.
+function localISO(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+let todayISO = localISO(new Date());
+function refreshToday() {
+  const now = localISO(new Date());
+  if (now !== todayISO) { todayISO = now; return true; }
+  return false;
+}
 function daysFromNow(n) {
-  const d = new Date(today);
+  const d = new Date();
   d.setDate(d.getDate() + n);
-  return d.toISOString().split('T')[0];
+  return localISO(d);
 }
 function dateTimeFromNow(n, hour = 10, min = 0) {
-  const d = new Date(today);
+  const d = new Date();
   d.setDate(d.getDate() + n);
   d.setHours(hour, min, 0, 0);
-  return d.toISOString().slice(0, 16);
+  const pad = x => String(x).padStart(2, '0');
+  return `${localISO(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 let SEED_LEADS = [];
@@ -2584,6 +2669,9 @@ function saveState() {
             // Genuinely changed (or brand new) → stamp it as a local edit and remember the hash.
             __l._modAt = __now; __l._modBy = __by;
             __leadHashes.set(__l.id, __leadContentHash(__l));
+            // Flag it as unsynced NOW, not when the debounced push fires — a snapshot landing
+            // in between must not be allowed to undo the edit the rep just made.
+            try { CrescendoSync.markLocalEdit(__l.id); } catch (_) {}
           }
           // else: untouched — leave existing _modAt/_modBy so pushLeads skips it.
         }
@@ -3843,6 +3931,19 @@ function renderQualifiedLeads() {
       </select>
       <span class="count-label" id="ql-count"></span>
     </div>
+    <div class="qual-bulk-row">
+      <button class="btn btn-ghost btn-sm" data-action="qual-select-all"><i data-lucide="check-square" aria-hidden="true"></i> Select all shown</button>
+    </div>
+    <div class="bulk-bar${(state.bulkScope === 'qualified' && state.bulkSelection && state.bulkSelection.length) ? ' active' : ''}" id="bulk-bar-qualified">
+      <span class="bulk-count">${(state.bulkSelection || []).length} selected</span>
+      <select class="form-select bulk-action-select" data-action="bulk-action" data-scope="qualified" aria-label="Bulk action">
+        <option value="">Choose action...</option>
+        <option value="move-to-crm">Move to CRM / Outreach</option>
+        ${canReassignLeads() ? '<optgroup label="Reassign to">' + SALES_TEAM.map(c => `<option value="reassign:${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') + '</optgroup>' : ''}
+        <option value="archive">Archive</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" data-action="bulk-clear">Clear selection</button>
+    </div>
   `;
 
   html += `<div class="qual-layout${hasUnqual ? '' : ' full-width'}">`;
@@ -3887,7 +3988,7 @@ function renderQualifiedList() {
           <path d="M45 60 L55 70 L75 50" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         <h3>${totalCount === 0 ? 'No qualified leads yet' : 'Nothing matches these filters'}</h3>
-        <p>${totalCount === 0 ? 'Qualify leads from the Lead Bank to see them here.' : 'There are ' + totalCount + ' qualified leads — widen the filters above to see them.'}</p>
+        <p>${totalCount === 0 ? 'Qualify leads from the Lead Bank to see them here.' : 'There are ' + totalCount + ' qualified leads. Widen the filters above to see them.'}</p>
       </div>
     `;
   } else {
@@ -3899,11 +4000,12 @@ function renderQualifiedList() {
       const sb = statusBadgeFor(l.status);
       const city = leadCity(l);
       const phone = (l.phones && l.phones[0] && l.phones[0].number) || ((l.contacts || []).find(c => c && c.phone) || {}).phone || '';
+      const selected = (state.bulkSelection || []).includes(l.id);
       html += `
-        <div class="card lead-card">
+        <div class="card lead-card${selected ? ' selected' : ''}">
           <div class="lead-card-header">
             <div>
-              <div class="lead-card-name">${escapeHtml(l.businessName)}</div>
+              <div class="lead-card-name"><input type="checkbox" class="bulk-check" data-action="bulk-toggle" data-scope="qualified" data-id="${l.id}" ${selected ? 'checked' : ''} aria-label="Select ${escapeHtml(l.businessName)}"> ${escapeHtml(l.businessName)}</div>
               ${l.industry ? `<span class="badge badge-neutral">${escapeHtml(l.industry)}</span>` : ''}
               ${city ? `<span class="badge badge-neutral">${escapeHtml(city)}</span>` : ''}
             </div>
@@ -4064,7 +4166,7 @@ function renderCRM() {
     ${activeFilters.length ? `
       <div class="filter-notice">
         <i data-lucide="filter" aria-hidden="true"></i>
-        <span>Filtered by ${activeFilters.map(x => escapeHtml(x.label)).join(' &middot; ')} — leads outside this are hidden, not missing.</span>
+        <span>Filtered by ${activeFilters.map(x => escapeHtml(x.label)).join(' &middot; ')}. Leads outside this are hidden, not missing.</span>
         <button class="btn btn-ghost btn-sm" data-action="clear-crm-filters">Clear filters</button>
       </div>
     ` : ''}
@@ -4426,7 +4528,7 @@ function renderCRMBoard(leads) {
               </div>
             `;
           }).join('')}
-          ${stageLeads.length > PER_COL ? `<div style="text-align:center;font-size:var(--text-2xs);color:var(--color-text-faint);padding:var(--space-2);">+${stageLeads.length - PER_COL} more — narrow with filters</div>` : ''}
+          ${stageLeads.length > PER_COL ? `<div style="text-align:center;font-size:var(--text-2xs);color:var(--color-text-faint);padding:var(--space-2);">+${stageLeads.length - PER_COL} more, narrow with filters</div>` : ''}
           <div class="kanban-drop-zone"></div>
         </div>
       </div>
@@ -5502,6 +5604,19 @@ document.getElementById('section-qualified-leads').addEventListener('click', e =
   } else if (action === 'show-more') {
     state.qualLimit = (state.qualLimit || QUAL_PAGE) + QUAL_PAGE;
     renderQualifiedList();
+  } else if (action === 'qual-select-all') {
+    // "Shown" means what the filters currently leave on screen — select-all across 200 leads
+    // you cannot see would be a trap.
+    const { leads } = getFilteredQualified();
+    const visible = leads.slice(0, state.qualLimit || QUAL_PAGE).map(l => l.id);
+    const allOn = visible.length > 0 && visible.every(x => (state.bulkSelection || []).includes(x));
+    state.bulkScope = 'qualified';
+    state.bulkSelection = allOn ? [] : visible;
+    renderQualifiedLeads();
+  } else if (action === 'bulk-clear') {
+    state.bulkSelection = [];
+    state.bulkScope = null;
+    renderQualifiedLeads();
   }
 });
 document.getElementById('section-qualified-leads').addEventListener('input', e => {
@@ -5514,6 +5629,21 @@ document.getElementById('section-qualified-leads').addEventListener('input', e =
   }
 });
 document.getElementById('section-qualified-leads').addEventListener('change', e => {
+  const action = e.target.dataset.action;
+  if (action === 'bulk-toggle') {
+    state.bulkScope = 'qualified';
+    state.bulkSelection = state.bulkSelection || [];
+    const id = e.target.dataset.id;
+    if (e.target.checked) { if (!state.bulkSelection.includes(id)) state.bulkSelection.push(id); }
+    else state.bulkSelection = state.bulkSelection.filter(x => x !== id);
+    renderQualifiedLeads();
+    return;
+  }
+  if (action === 'bulk-action') {
+    applyBulkAction('qualified', e.target.value);
+    e.target.value = '';
+    return;
+  }
   const f = e.target.dataset.filter;
   if (!f) return;
   const q = state.filters.qualified;
@@ -5679,9 +5809,23 @@ document.getElementById('section-crm').addEventListener('change', e => {
   if (e.target.dataset.action === 'log-call') {
     const outcome = e.target.value;
     if (outcome) {
-      logCall(e.target.dataset.id, outcome);
-      showToast('Call logged: ' + callOutcomeLabel(outcome), 'success');
+      const id = e.target.dataset.id;
+      const before = (getLeadById(id) || { crm: {} }).crm || {};
+      const wasStage = before.stage;
+      logCall(id, outcome);
+      const lead = getLeadById(id);
+      // Say what the app just booked, so the rep never has to go looking for the next step.
+      let msg = 'Call logged: ' + callOutcomeLabel(outcome);
+      if (lead && lead.crm) {
+        if (lead.crm.stage !== wasStage) msg += ' · moved to ' + getStageName(lead.crm.stage);
+        if (outcome !== 'not_interested' && lead.crm.followUpDate) msg += ' · follow up ' + formatDate(lead.crm.followUpDate);
+      }
+      showToast(msg, 'success');
+      // Not interested is the end of the road — go straight to the reason + archive flow
+      // rather than leaving the lead sitting in the pipeline.
+      if (outcome === 'not_interested') openOutcomeReasonModal(id, 'not_interested');
       renderCRM();
+      renderSidebarBadges();
     }
     return;
   }
@@ -5983,14 +6127,28 @@ document.getElementById('side-panel').addEventListener('click', e => {
   if (action === 'close-panel') closePanel();
   else if (action === 'call-lead') openDialer(target.dataset.id, target.dataset.num);
   else if (action === 'log-call') {
-    const lead = getLeadById(target.dataset.id);
+    // Was a bare activity line with no outcome, so it set no follow-up and moved no stage.
+    // Ask what happened, then run the same path as everywhere else.
+    const id = target.dataset.id;
+    const lead = getLeadById(id);
     if (lead) {
-      const num = target.dataset.num || '';
-      addActivity(lead, 'logged a call' + (num ? ' to ' + num : ''));
-      if (typeof releaseLead === 'function') releaseLead(lead);
-      saveState();
-      renderAll();
-      showToast('Call logged on ' + lead.businessName, 'success');
+      showActionSheet({
+        title: 'How did that call go?',
+        message: lead.businessName,
+        options: CALL_OUTCOMES.map(o => ({ label: o.label, value: o.value, icon: 'phone' }))
+      }).then(outcome => {
+        if (!outcome) return;
+        const wasStage = (lead.crm || {}).stage;
+        logCall(id, outcome);
+        let msg = 'Call logged: ' + callOutcomeLabel(outcome);
+        if (lead.crm) {
+          if (lead.crm.stage !== wasStage) msg += ' · moved to ' + getStageName(lead.crm.stage);
+          if (outcome !== 'not_interested' && lead.crm.followUpDate) msg += ' · follow up ' + formatDate(lead.crm.followUpDate);
+        }
+        showToast(msg, 'success');
+        if (outcome === 'not_interested') openOutcomeReasonModal(id, 'not_interested');
+        renderAll();
+      });
     }
   }
   else if (action === 'add-phone') addDynamicItem('phones-list', 'phone');
@@ -6726,12 +6884,20 @@ function csvEscape(val) {
   return s;
 }
 function exportLeadsCSV() {
-  const cols = ['Business Name','Industry','Website','Status','Stage','Assigned To','Deal Value','Date Added','Primary Contact','Phone','Email','Qualification Summary'];
+  const cols = ['Business Name','Industry','City','Website','Status','Stage','In Stage Since','Assigned To','Deal Value','Date Added','Last Contacted','Follow Up On','Primary Contact','Phone','All Phones','Email','Qualification Summary'];
   const rows = [cols.join(',')];
   state.leads.forEach(l => {
     const pc = getPrimaryContact(l) || {};
-    const phone = (l.phones && l.phones[0]) || (pc.phone) || '';
-    const email = (l.emails && l.emails[0]) || (pc.email) || '';
+    // phones[] holds {number} and emails[] holds {address} — reading the object straight out
+    // wrote "[object Object]" into every Phone and Email cell of every export.
+    const phoneList = []
+      .concat((l.phones || []).map(p => (p && p.number) || '').filter(Boolean))
+      .concat(pc.phone ? [pc.phone] : []);
+    const emailList = []
+      .concat((l.emails || []).map(e => (e && e.address) || '').filter(Boolean))
+      .concat(pc.email ? [pc.email] : []);
+    const phone = phoneList[0] || '';
+    const email = emailList[0] || '';
     const stageName = l.crm ? getStageName(l.crm.stage) : '';
     const dv = l.crm ? getDealValue(l) : '';
     const q = l.qualification
@@ -6740,14 +6906,19 @@ function exportLeadsCSV() {
     rows.push([
       csvEscape(l.businessName),
       csvEscape(l.industry),
+      csvEscape(leadCity(l)),
       csvEscape(l.website),
       csvEscape(l.status),
       csvEscape(stageName),
+      csvEscape(l.crm ? stageEnteredOn(l, l.crm.stage) : ''),
       csvEscape(l.assignedTo || ''),
       csvEscape(dv),
       csvEscape(l.dateAdded || ''),
+      csvEscape((l.crm && l.crm.dateLastContact) || ''),
+      csvEscape((l.crm && l.crm.followUpDate) || ''),
       csvEscape(pc.name || ''),
       csvEscape(phone),
+      csvEscape(phoneList.join(' / ')),
       csvEscape(email),
       csvEscape(q)
     ].join(','));
@@ -6786,6 +6957,12 @@ async function applyBulkAction(scope, value) {
       const l = getLeadById(id);
       if (l && l.crm && setStage(l, s)) n++;
     });
+  } else if (value === 'move-to-crm') {
+    // Reps were moving 200+ qualified leads one card at a time.
+    ids.forEach(id => {
+      const l = getLeadById(id);
+      if (l && l.status === 'qualified') { moveToCRM(id); n++; }
+    });
   } else if (value === 'archive') {
     ids.forEach(id => { archiveLead(id, 'archived'); n++; });
   } else if (value === 'delete') {
@@ -6798,9 +6975,10 @@ async function applyBulkAction(scope, value) {
     ids.forEach(id => { deleteLead(id); n++; });
   }
   saveState();
+  try { CrescendoSync.flush(); } catch (_) {}
   state.bulkSelection = [];
   state.bulkScope = null;
-  showToast(n + ' leads updated', 'success');
+  showToast(n + ' lead' + (n === 1 ? '' : 's') + ' updated', 'success');
   renderAll();
 }
 
@@ -7868,11 +8046,44 @@ function init() {
   // Keep "x min ago" labels and 15-min claim badges honest without user interaction.
   // Skipped while typing or while a modal/panel/sheet is open so it never eats input.
   setInterval(() => {
+    // Roll the date over first — a tab left open past midnight otherwise keeps counting
+    // yesterday's work as "today".
+    refreshToday();
     if (document.hidden || state.modalOpen || state.panelOpen || isMoreSheetOpen() || _actionSheetResolve) return;
     const ae = document.activeElement;
     if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT')) return;
     renderActiveSection();
   }, 60000);
+  // Phones suspend timers; catch the rollover the moment the app comes back too, and ask how
+  // the call the rep just made went.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (refreshToday()) renderAll();
+    askPendingCallOutcome();
+  });
+  window.addEventListener('focus', () => { askPendingCallOutcome(); });
+}
+
+// WHICH SIDE OF A MERGE IS NEWER — the rule that decides whether a rep's change sticks.
+// In priority order:
+//  1. An edit this device made that the cloud has not confirmed always survives, so a snapshot
+//     landing mid-edit can never undo what the rep just did.
+//  2. Otherwise trust _srvAt, the SERVER's clock, written on every push. _modAt is the device
+//     wall-clock, so one phone set a few minutes fast used to beat everyone else's fresher
+//     work — the last remaining way a change could silently revert.
+//  3. Fall back to _modAt when either side has never been server-stamped (offline edits).
+function mergeRemoteWins(local, remote) {
+  if (!local) return true;
+  if (!remote) return false;
+  let unsynced = false;
+  try { unsynced = CrescendoSync.hasUnsyncedEdit(remote.id); } catch (_) {}
+  if (unsynced) return false;
+  const rSrv = (typeof remote._srvAt === 'string') ? remote._srvAt : '';
+  const lSrv = (typeof local._srvAt === 'string') ? local._srvAt : '';
+  if (rSrv && lSrv && rSrv !== lSrv) return rSrv > lSrv;
+  const rAt = (typeof remote._modAt === 'string') ? remote._modAt : '';
+  const lAt = (typeof local._modAt === 'string') ? local._modAt : '';
+  return rAt > lAt;
 }
 
 // Initialize Firestore sync + merge remote leads into local state, live.
@@ -7907,22 +8118,20 @@ async function startSharedSync() {
           continue; // never merge the tombstone itself into the lead list
         }
         if (!local) { r.__remoteStamped = true; byId.set(r.id, r); continue; }
-        const rAt = (typeof r._modAt === 'string') ? r._modAt : '';
-        const lAt = (typeof local._modAt === 'string') ? local._modAt : '';
+        const remoteWins = mergeRemoteWins(local, r);
         // ACTIVITY IS ADDITIVE: whole-doc newest-wins would silently drop the loser's
         // just-logged call when two reps touch the SAME lead near-simultaneously. Union both
         // sides' activity into whichever doc wins so no call/disposition history is ever lost.
         const __k = a => `${(a && a.date) || ''}|${(a && a.action) || ''}|${(a && a.by) || ''}`;
-        const winner = (rAt > lAt) ? r : local;
-        const loser = (rAt > lAt) ? local : r;
+        const winner = remoteWins ? r : local;
+        const loser = remoteWins ? local : r;
         const have = new Set((winner.activity || []).map(__k));
         for (const a of (loser.activity || [])) {
           if (!have.has(__k(a))) { (winner.activity = winner.activity || []).push(a); have.add(__k(a)); }
         }
         if (Array.isArray(winner.activity)) winner.activity.sort((a, b) => String((b && b.date) || '').localeCompare(String((a && a.date) || '')));
-        // Remote wins only if it is strictly newer than the local copy.
-        if (rAt > lAt) { r.__remoteStamped = true; byId.set(r.id, r); }
-        // else keep local (an unpushed newer edit, or a tie) and let it push on next saveState.
+        if (remoteWins) { r.__remoteStamped = true; byId.set(r.id, r); }
+        // else keep local (an unpushed edit, or a tie) and let it push on next saveState.
       }
       // Surface the first-snapshot empty-cloud signal to the deferred seed-push gate.
       if (meta.firstSnapshot) { CrescendoSync.__cloudKnownEmpty = !!meta.cloudEmpty; }
