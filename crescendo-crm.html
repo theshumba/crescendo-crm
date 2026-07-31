@@ -542,6 +542,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .stat-chip.green .stat-value { color: var(--color-success); }
 .stat-chip.amber .stat-value { color: var(--color-warning); }
 .alert-banner.active { outline: 2px solid var(--color-warning); }
+#update-banner { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); z-index: 120; display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-text); color: var(--color-text-inverse); border-radius: var(--radius-full); box-shadow: 0 10px 30px oklch(from var(--color-text) l c h / 0.3); font-size: var(--text-sm); font-weight: 600; max-width: calc(100vw - 2rem); }
+@media (max-width: 840px) { #update-banner { bottom: calc(72px + env(safe-area-inset-bottom)); } }
 .meeting-card.awaiting { border-color: var(--color-warning); }
 
 .meeting-card { display: flex; align-items: flex-start; gap: var(--space-5); }
@@ -8261,6 +8263,9 @@ function init() {
   lucide.createIcons();
   // Boot shared-backend sync (safe no-op if Firebase isn't configured).
   startSharedSync();
+  // Notice deploys without anyone having to be told to hard-refresh.
+  checkForUpdate(true);
+  setInterval(() => checkForUpdate(false), 15 * 60 * 1000);
   // Phones suspend background tabs aggressively — commit any pending cloud writes the
   // moment the app is backgrounded or the page is being torn down.
   document.addEventListener('visibilitychange', () => {
@@ -8308,6 +8313,35 @@ function mergeRemoteWins(local, remote) {
   const rAt = (typeof remote._modAt === 'string') ? remote._modAt : '';
   const lAt = (typeof local._modAt === 'string') ? local._modAt : '';
   return rAt > lAt;
+}
+
+// ===== SELF-UPDATE =====
+// GitHub Pages serves whatever the browser has cached, so after a deploy reps carry on using
+// the old app until someone tells them to hard-refresh, and then reports the old version as
+// broken. This watches the deployed file's ETag and offers a one-tap reload when it changes.
+// A HEAD request, so it costs nothing. Never runs from file://.
+let __deployedTag = null;
+async function checkForUpdate(initial) {
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const r = await fetch(location.pathname + '?v=' + Date.now(), { method: 'HEAD', cache: 'no-store' });
+    const tag = r.headers.get('etag') || r.headers.get('last-modified');
+    if (!tag) return;
+    if (initial || __deployedTag === null) { __deployedTag = tag; return; }
+    if (tag !== __deployedTag) showUpdateBanner();
+  } catch (_) { /* offline or blocked: try again next tick */ }
+}
+function showUpdateBanner() {
+  if (document.getElementById('update-banner')) return;
+  const d = document.createElement('div');
+  d.id = 'update-banner';
+  d.innerHTML = '<span>A newer version of the CRM is ready.</span><button class="btn btn-primary btn-sm">Reload now</button>';
+  // Flush anything unsaved before reloading, or the rep loses the edit they just made.
+  d.querySelector('button').addEventListener('click', async () => {
+    try { await CrescendoSync.flush(); } catch (_) {}
+    location.reload();
+  });
+  document.body.appendChild(d);
 }
 
 // Initialize Firestore sync + merge remote leads into local state, live.
