@@ -1,0 +1,14 @@
+{
+  "name": "crescendo-crm",
+  "private": true,
+  "version": "2.1.0",
+  "description": "Single-file CRM for the Crescendo sales team. No build step: crescendo-crm.html IS the app. This package.json exists only so the verification harness has its one dev dependency.",
+  "scripts": {
+    "verify": "node scripts/verify.mjs",
+    "verify:live": "node scripts/verify-live-cache.mjs",
+    "backup": "node scripts/backup-leads.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}

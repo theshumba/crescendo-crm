@@ -11,7 +11,7 @@
 <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&display=swap" rel="stylesheet">
 <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-<!-- Leaflet (Map view — lead density planning). Loaded from CDN; degrades gracefully if offline. -->
+<!-- Leaflet (Map view, lead density planning). Loaded from CDN; degrades gracefully if offline. -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -20,13 +20,13 @@
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-  window.__fb = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, runTransaction };
+  import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  window.__fb = { initializeApp, getAuth, signInAnonymously, onAuthStateChanged, getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, getDoc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch, runTransaction };
   window.dispatchEvent(new Event('fb-ready'));
 </script>
 <!--
   Paste the config from your Firebase project console here. Step-by-step in FIREBASE-SETUP.md.
-  Leave as-is and the app will keep working offline (local-only, no sync) — it will never crash.
+  Leave as-is and the app will keep working offline (local-only, no sync), it will never crash.
 -->
 <script>
   window.CRESCENDO_FIREBASE_CONFIG = {
@@ -540,6 +540,9 @@ button { -webkit-tap-highlight-color: transparent; }
 .stat-chip .stat-value { font-family: var(--font-display); font-weight: 700; font-size: var(--text-lg); }
 .stat-chip.teal .stat-value { color: var(--color-primary); }
 .stat-chip.green .stat-value { color: var(--color-success); }
+.stat-chip.amber .stat-value { color: var(--color-warning); }
+.alert-banner.active { outline: 2px solid var(--color-warning); }
+.meeting-card.awaiting { border-color: var(--color-warning); }
 
 .meeting-card { display: flex; align-items: flex-start; gap: var(--space-5); }
 .meeting-date-display { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; white-space: nowrap; color: var(--color-primary); min-width: 140px; }
@@ -790,6 +793,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .fu-chip.fu-today strong { color: var(--color-warning); }
 .fu-chip.fu-none strong { color: var(--color-text-faint); }
 .fu-chip.fu-worked strong { color: var(--color-success); }
+.fu-chip.fu-stalled strong { color: var(--color-warning); }
+.crm-entered.stalled { color: var(--color-warning); font-weight: 600; }
 .fu-chip.active strong, .fu-chip.active { color: #fff; }
 .kanban-column-tally { display: inline-flex; align-items: center; gap: 5px; }
 
@@ -1260,7 +1265,7 @@ button { -webkit-tap-highlight-color: transparent; }
     <div>
       <label for="chat-api-key">Google Gemini API Key</label>
       <input type="password" id="chat-api-key" placeholder="AIza...">
-      <p style="margin-top:var(--space-2);">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--color-primary);text-decoration:underline;">aistudio.google.com/apikey</a> — no credit card required. Your key is stored locally and only sent to Google.</p>
+      <p style="margin-top:var(--space-2);">Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--color-primary);text-decoration:underline;">aistudio.google.com/apikey</a>, no credit card required. Your key is stored locally and only sent to Google.</p>
     </div>
     <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;">
       <button class="btn btn-primary btn-sm" id="chat-save-key">Save Key</button>
@@ -1299,7 +1304,7 @@ const state = {
   archiveTab: 'follow_up',
   filters: {
     leadBank: { search: '', status: 'all', source: 'all', assignedTo: 'all', today: false },
-    crm: { search: '', stage: 'all', priority: 'all', overdueOnly: false, assignedTo: 'all', today: false, touchedToday: false, followUp: 'all' },
+    crm: { search: '', stage: 'all', priority: 'all', overdueOnly: false, assignedTo: 'all', today: false, touchedToday: false, stalled: false, followUp: 'all' },
     qualified: { search: '', industry: 'all', city: 'all', source: 'all', assignedTo: 'all', hasPhone: false, sort: 'score' },
     archive: {}
   },
@@ -1314,8 +1319,9 @@ const state = {
   bulkScope: null, // 'crm' | 'lead-bank'
   crmDetailsOpen: {},   // per-lead expanded state for the mobile CRM card details
   crmSheetId: null,     // lead whose full record is open over the board (null = closed)
-  pendingCall: null,    // {id, at} — lead just dialled, outcome asked for on return
+  pendingCall: null,    // {id, at}, lead just dialled, outcome asked for on return
   workList: null,       // frozen queue of due lead ids while working the list
+  archiveOverdueOnly: false, // archive banner toggle: show only leads whose follow-up is overdue
   lbLimit: 60,          // lead-bank incremental render limit (reset on filter change)
   crmLimit: 40,         // CRM list incremental render limit
   qualLimit: 60         // qualified-leads incremental render limit
@@ -1358,6 +1364,7 @@ const CrescendoSync = (function () {
   // never let a remote copy win over one of these, or the rep watches their own change undo
   // itself. Set the moment saveState stamps a lead, cleared only on a confirmed commit.
   const pendingLocal = new Set();
+  const snapStats = { total: 0, fromCache: 0, fromServer: 0, firstFromCache: null, docs: 0 };
 
   function isConfigured() {
     const c = window.CRESCENDO_FIREBASE_CONFIG;
@@ -1377,7 +1384,7 @@ const CrescendoSync = (function () {
     }
     if (ready) return true;
     if (!isConfigured()) {
-      console.info('[CrescendoSync] Firebase not configured — running in local-only mode. See FIREBASE-SETUP.md.');
+      console.info('[CrescendoSync] Firebase not configured, running in local-only mode. See FIREBASE-SETUP.md.');
       return false;
     }
     if (!window.__fb) {
@@ -1387,7 +1394,22 @@ const CrescendoSync = (function () {
     try {
       const app = window.__fb.initializeApp(window.CRESCENDO_FIREBASE_CONFIG);
       auth = window.__fb.getAuth(app);
-      db = window.__fb.getFirestore(app);
+      // DISK CACHE. Without it every single page open re-downloads all ~545 lead documents,
+      // so ~545 reads a load against the free tier's 50k/day. Six reps reloading through a
+      // working day sits close enough to that ceiling that tripping it is a matter of when,
+      // and a read quota trip looks exactly like the sync outages this CRM has had before:
+      // everyone silently stops seeing each other's work. With the cache a reload is served
+      // from IndexedDB and only genuinely changed documents come down the wire.
+      try {
+        db = window.__fb.initializeFirestore(app, {
+          localCache: window.__fb.persistentLocalCache({ tabManager: window.__fb.persistentMultipleTabManager() })
+        });
+      } catch (e) {
+        // Private browsing, storage disabled, or a second init in the same page. Fall back to
+        // the plain client rather than losing sync altogether.
+        console.warn('[CrescendoSync] Persistent cache unavailable, using network-only client:', e);
+        db = window.__fb.getFirestore(app);
+      }
       await window.__fb.signInAnonymously(auth);
       ready = true;
       CrescendoSync.__db = db; // expose for the L1 create-if-absent seed transaction
@@ -1429,12 +1451,23 @@ const CrescendoSync = (function () {
           // (sentinel on write, Timestamp on read) so it MUST be excluded from the echo key.
           lastPushed.set(lead.id, JSON.stringify(_echoKey(lead)));
         });
-        // Record cloud-empty state exactly once, on the very first snapshot.
-        if (!firstSnapshotSeen) { cloudWasEmpty = (remoteLeads.length === 0); }
+        // CACHE SAFETY. With the disk cache on, the FIRST snapshot after a page load is served
+        // from IndexedDB, and on a device that has never synced it is empty. The seed-push gate
+        // reads "cloud is empty" as "fresh setup, upload my local book" — so an empty cache
+        // snapshot could have pushed one rep's stale localStorage over all 545 cloud leads.
+        // Only a snapshot that actually came from the server may answer that question.
+        const fromCache = !!(snap.metadata && snap.metadata.fromCache);
+        // Small running tally so "is this screen showing cached or live data" is answerable
+        // from the console instead of guessed at.
+        snapStats.total++;
+        if (fromCache) snapStats.fromCache++; else snapStats.fromServer++;
+        if (snapStats.total === 1) snapStats.firstFromCache = fromCache;
+        snapStats.docs = remoteLeads.length;
+        if (!firstSnapshotSeen && !fromCache) { cloudWasEmpty = (remoteLeads.length === 0); }
         lastSyncedAt = new Date();
         applyingRemote = true;
-        try { onRemoteCb && onRemoteCb(remoteLeads, { firstSnapshot: !firstSnapshotSeen, cloudEmpty: cloudWasEmpty }); }
-        finally { applyingRemote = false; firstSnapshotSeen = true; }
+        try { onRemoteCb && onRemoteCb(remoteLeads, { firstSnapshot: !firstSnapshotSeen, cloudEmpty: cloudWasEmpty, fromCache }); }
+        finally { applyingRemote = false; if (!fromCache) firstSnapshotSeen = true; }
         showSyncStatus('connected');
       },
       err => {
@@ -1478,7 +1511,7 @@ const CrescendoSync = (function () {
     // set instead of a hard delete, so every other rep's merge can DROP the lead rather
     // than resurrect it. Ids stay in pendingDeletes until the tombstone actually lands.
     for (const id of Array.from(pendingDeletes)) {
-      if (currentIds.has(id)) { pendingDeletes.delete(id); continue; } // lead is back locally — cancel
+      if (currentIds.has(id)) { pendingDeletes.delete(id); continue; } // lead is back locally, cancel
       const tomb = { id: String(id), _deleted: true, _modAt: new Date().toISOString(), _modBy: user, _srvAt: window.__fb.serverTimestamp() };
       ops.push({ id: String(id), ref: window.__fb.doc(db, 'leads', String(id)), payload: tomb, echo: null, del: true });
     }
@@ -1602,7 +1635,7 @@ const CrescendoSync = (function () {
     } else {
       chip.classList.add('off');
       if (text) text.textContent = 'Offline';
-      chip.title = 'Not connected to the shared backend — changes stay on this device.' + when;
+      chip.title = 'Not connected to the shared backend, changes stay on this device.' + when;
     }
   }
 
@@ -1611,8 +1644,9 @@ const CrescendoSync = (function () {
   function markLocalEdit(id) { if (id) pendingLocal.add(String(id)); }
   function hasUnsyncedEdit(id) { return pendingLocal.has(String(id)); }
   function pendingCount() { return pendingLocal.size; }
+  function stats() { return { ...snapStats, pending: pendingLocal.size }; }
   return { init, subscribe, pushLeads, flush, isConfigured, showSyncStatus, queueDelete,
-           markLocalEdit, hasUnsyncedEdit, pendingCount };
+           markLocalEdit, hasUnsyncedEdit, pendingCount, stats };
 })();
 
 // ========== USER SESSION ==========
@@ -1782,7 +1816,7 @@ function applyConsultantDefaults() {
     } catch (_) {}
     return;
   }
-  if (hasPref) return; // returning rep — respect whatever filter they last chose
+  if (hasPref) return; // returning rep, respect whatever filter they last chose
   state.filters.leadBank.assignedTo = 'all';
   state.filters.crm.assignedTo = 'all';
 }
@@ -2148,9 +2182,9 @@ state.leads = (Array.isArray(SEED_LEADS) && SEED_LEADS.length) ? SEED_LEADS.map(
     status: 'qualified',
     qualification: {
       strategyDesign: 'Strong need for brand refresh. Current identity feels dated and doesn\'t match the quality of their product. They want a premium positioning that appeals to the 25-40 craft beer demographic. Need new packaging design system across their full range.',
-      experienceDesign: 'Website is basic WordPress — poor mobile experience, no real storytelling. Need a full digital experience that showcases the brewing process, their story, and makes the product feel premium. Brewery tour booking UX is broken.',
+      experienceDesign: 'Website is basic WordPress, poor mobile experience, no real storytelling. Need a full digital experience that showcases the brewing process, their story, and makes the product feel premium. Brewery tour booking UX is broken.',
       digitalCommerce: 'DTC channel launched on Shopify but conversion rates are below 1%. Need full e-commerce strategy including subscription model, gift sets, and wholesale portal. Currently losing sales to competitors with better online experiences.',
-      growthIntent: 'Expanding from 3 to 12 stockists this year. Planning to launch a tap room. Entering the canned beer market for the first time. Ambitious growth targets — 300% revenue increase in 18 months.',
+      growthIntent: 'Expanding from 3 to 12 stockists this year. Planning to launch a tap room. Entering the canned beer market for the first time. Ambitious growth targets, 300% revenue increase in 18 months.',
       weaknessesOpportunities: 'No email marketing strategy. Social media is inconsistent. Competitor analysis shows they could dominate the Bristol craft beer scene with proper positioning. Their story is compelling but not being told digitally.',
       dateQualified: daysFromNow(-15)
     },
@@ -2205,7 +2239,7 @@ state.leads = (Array.isArray(SEED_LEADS) && SEED_LEADS.length) ? SEED_LEADS.map(
     phones: [{ number: '+44 114 268 9012' }],
     emails: [{ address: 'partnerships@blackthornoutdoors.co.uk' }],
     contacts: [{ name: 'Tom Blackthorn', title: 'Brand Director', phone: '+44 7801 234567', email: 'tom@blackthornoutdoors.co.uk' }],
-    description: 'Premium outdoor equipment brand with strong heritage. Launching a new direct-to-consumer channel and need complete digital transformation — brand, UX, and commerce.',
+    description: 'Premium outdoor equipment brand with strong heritage. Launching a new direct-to-consumer channel and need complete digital transformation, brand, UX, and commerce.',
     source: 'google',
     dateAdded: daysFromNow(-18),
     status: 'crm',
@@ -2229,7 +2263,7 @@ state.leads = (Array.isArray(SEED_LEADS) && SEED_LEADS.length) ? SEED_LEADS.map(
       meetingNotes: 'Discovery workshop with Tom and the wider brand team. Need to prepare competitive audit and initial strategy thoughts.',
       notes: [
         { text: 'Excellent chemistry on the intro call. Tom is passionate and has internal buy-in. This could be a landmark project.', timestamp: new Date(today.getTime() - 1 * 86400000).toISOString() },
-        { text: 'Initial outreach via their website. Tom responded within 2 hours — clearly keen.', timestamp: new Date(today.getTime() - 14 * 86400000).toISOString() }
+        { text: 'Initial outreach via their website. Tom responded within 2 hours, clearly keen.', timestamp: new Date(today.getTime() - 14 * 86400000).toISOString() }
       ],
       dateMovedToCRM: daysFromNow(-14)
     },
@@ -2267,7 +2301,7 @@ state.leads = (Array.isArray(SEED_LEADS) && SEED_LEADS.length) ? SEED_LEADS.map(
       meetingDate: '',
       meetingNotes: '',
       notes: [
-        { text: 'David called to say they\'re going to handle the rebrand internally. Polite but firm. Revisit in 6 months — likely to struggle without external help.', timestamp: new Date(today.getTime() - 30 * 86400000).toISOString() }
+        { text: 'David called to say they\'re going to handle the rebrand internally. Polite but firm. Revisit in 6 months, likely to struggle without external help.', timestamp: new Date(today.getTime() - 30 * 86400000).toISOString() }
       ],
       dateMovedToCRM: daysFromNow(-40)
     },
@@ -2313,13 +2347,13 @@ function getLeadById(id) {
   return state.leads.find(l => l.id === id);
 }
 function formatDate(iso) {
-  if (!iso) return '—';
+  if (!iso) return ', ';
   const d = new Date(iso);
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 function formatDateTime(iso) {
-  if (!iso) return '—';
+  if (!iso) return ', ';
   const d = new Date(iso);
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const h = d.getHours();
@@ -2353,13 +2387,35 @@ function isTodayLead(l) {
 // due-date-only version undercounted badly — a lead moved into Contacted this morning with no
 // follow-up date set simply didn't appear. Anything that dates a lead to today counts.
 function isTouchedToday(l) {
-  if (!l || !l.crm) return false;
-  if (stageEnteredOn(l, l.crm.stage) === todayISO) return true;
-  if (l.crm.dateMovedToCRM === todayISO) return true;
-  if (l.crm.dateLastContact === todayISO) return true;
-  if (l.crm.dateFirstContact === todayISO) return true;
-  if (l.crm.meetingBooked && l.crm.meetingDate && isTodayISO(l.crm.meetingDate)) return true;
+  if (!l) return false;
+  if (l.crm) {
+    if (stageEnteredOn(l, l.crm.stage) === todayISO) return true;
+    if (l.crm.dateMovedToCRM === todayISO) return true;
+    if (l.crm.dateLastContact === todayISO) return true;
+    if (l.crm.dateFirstContact === todayISO) return true;
+    if (l.crm.meetingBooked && l.crm.meetingDate && isTodayISO(l.crm.meetingDate)) return true;
+  }
+  // Works for leads with no CRM record too, so the Lead Bank can use it.
+  if (l.dateAdded === todayISO) return true;
   return (l.activity || []).some(a => a && a.date && String(a.date).split('T')[0] === todayISO);
+}
+// STALLED: sitting in the same stage for weeks with nobody touching it. These are the leads
+// that quietly rot in the middle of a pipeline — they have a follow-up date so they never look
+// urgent, and they are never at the top of a score-sorted list, so nothing ever surfaces them.
+const STALL_DAYS = 21;
+function daysSince(iso) {
+  if (!iso) return null;
+  const d = daysUntil(iso);
+  return d === null ? null : -d;
+}
+function isStalled(l) {
+  if (!l || l.status !== 'crm' || !l.crm) return false;
+  if ((l.crm.stage || 1) >= 6) return false;             // won deals are not stalled
+  const inStage = daysSince(stageEnteredOn(l, l.crm.stage));
+  if (inStage === null || inStage < STALL_DAYS) return false;
+  const lastAct = (l.activity || [])[0];
+  const sinceAct = lastAct && lastAct.date ? daysSince(String(lastAct.date).split('T')[0]) : null;
+  return sinceAct === null || sinceAct >= 14;
 }
 // City for filtering, read off the address against the known UK centroid table (same list the
 // Map section uses). Returns '' when the address names no city we recognise.
@@ -3169,11 +3225,11 @@ function backfillUnknownLocations(unknownLeads) {
 // Distinct colours per lead status. Reuse theme tokens where sensible.
 function leadStatusColor(status) {
   switch (status) {
-    case 'crm': return '#01696f';        // teal — in active outreach
-    case 'qualified': return '#437a22';  // green — qualified
+    case 'crm': return '#01696f';        // teal, in active outreach
+    case 'qualified': return '#437a22';  // green, qualified
     case 'lead': return '#006494';       // blue
     case 'new': return '#d19900';        // gold
-    case 'archive': return '#7a7974';    // grey — archived/backlog
+    case 'archive': return '#7a7974';    // grey, archived/backlog
     case 'unqualified': default: return '#964219'; // warning brown
   }
 }
@@ -3228,7 +3284,7 @@ function renderMap() {
   container.innerHTML = `
     <div class="section-header"><h1>Map</h1></div>
     <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin-bottom:var(--space-4);">
-      Lead density across the UK. Pins are approximate — derived from each lead's address (city centroid) when exact coordinates are missing.
+      Lead density across the UK. Pins are approximate, derived from each lead's address (city centroid) when exact coordinates are missing.
     </p>
     <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;align-items:center;margin-bottom:var(--space-4);font-size:var(--text-sm);">
       ${legendHtml || '<span style="color:var(--color-text-muted);">No located leads.</span>'}
@@ -4105,6 +4161,7 @@ function getFilteredCRM() {
   if (f.overdueOnly) leads = leads.filter(l => l.crm && l.crm.followUpDate && daysUntil(l.crm.followUpDate) !== null && daysUntil(l.crm.followUpDate) <= 0);
   if (f.today) leads = leads.filter(l => isTodayLead(l));
   if (f.touchedToday) leads = leads.filter(l => isTouchedToday(l));
+  if (f.stalled) leads = leads.filter(l => isStalled(l));
   if (f.followUp && f.followUp !== 'all') leads = leads.filter(l => followUpBucket(l) === f.followUp);
 
   const crmSort = f.sort || 'score';
@@ -4133,6 +4190,7 @@ function activeCRMFilters() {
   if (f.overdueOnly) on.push({ key: 'overdue', label: 'Overdue only' });
   if (f.today) on.push({ key: 'today', label: 'Due today' });
   if (f.touchedToday) on.push({ key: 'touchedToday', label: 'Worked today' });
+  if (f.stalled) on.push({ key: 'stalled', label: 'Stalled' });
   if (f.followUp && f.followUp !== 'all') on.push({ key: 'followUp', label: FOLLOW_UP_LABELS[f.followUp] || f.followUp });
   if (f.assignedTo !== 'all') on.push({ key: 'assigned', label: f.assignedTo });
   return on;
@@ -4141,7 +4199,7 @@ const FOLLOW_UP_LABELS = { overdue: 'Overdue', today: 'Due today', week: 'Next 7
 function clearCRMFilters() {
   const f = state.filters.crm;
   f.search = ''; f.stage = 'all'; f.priority = 'all'; f.overdueOnly = false;
-  f.today = false; f.touchedToday = false; f.followUp = 'all'; f.assignedTo = 'all';
+  f.today = false; f.touchedToday = false; f.stalled = false; f.followUp = 'all'; f.assignedTo = 'all';
   savePrefs();
   state.crmLimit = CRM_PAGE;
 }
@@ -4158,6 +4216,7 @@ function renderCRM() {
   const workedToday = cohort.filter(isTouchedToday).length;
   const activeFilters = activeCRMFilters();
   const dueNow = dueQueue().length;
+  const stalledCount = cohort.filter(isStalled).length;
 
   container.innerHTML = `
     <div class="section-header">
@@ -4185,6 +4244,7 @@ function renderCRM() {
       <button class="fu-chip fu-none${f.followUp==='none'?' active':''}" data-action="follow-up-filter" data-bucket="none" aria-pressed="${f.followUp==='none'}"><strong>${fu.none}</strong> no date set</button>
       <span class="followup-strip-sep"></span>
       <button class="fu-chip fu-worked${f.touchedToday?' active':''}" data-action="toggle-worked-today" aria-pressed="${!!f.touchedToday}"><strong>${workedToday}</strong> worked today</button>
+      ${stalledCount || f.stalled ? `<button class="fu-chip fu-stalled${f.stalled?' active':''}" data-action="toggle-stalled" aria-pressed="${!!f.stalled}" title="No movement for ${STALL_DAYS}+ days"><strong>${stalledCount}</strong> stalled</button>` : ''}
     </div>
     ${activeFilters.length ? `
       <div class="filter-notice">
@@ -4419,7 +4479,7 @@ function renderCRMList(leads) {
               ${pc ? `<span>${escapeHtml(pc.name)}${pc.title ? ' · ' + escapeHtml(pc.title) : ''}</span>` : ''}
               ${l.industry ? `<span>${escapeHtml(l.industry)}</span>` : ''}
               <span class="badge deal-badge" title="Deal value">${formatMoney(getDealValue(l))}</span>
-              ${enteredOn ? `<span class="crm-entered">${enteredOn === todayISO ? 'Moved to ' + getStageName(crm.stage) + ' today' : 'In ' + getStageName(crm.stage) + ' since ' + formatDate(enteredOn)}</span>` : ''}
+              ${enteredOn ? `<span class="crm-entered${isStalled(l) ? ' stalled' : ''}">${enteredOn === todayISO ? 'Moved to ' + getStageName(crm.stage) + ' today' : 'In ' + getStageName(crm.stage) + ' since ' + formatDate(enteredOn)}</span>` : ''}
             </div>
             <div class="crm-badges">
               <span class="badge ${getStageBadge(crm.stage)}">${getStageName(crm.stage)}</span>
@@ -4560,7 +4620,7 @@ function renderResearchChecklist(lead) {
 }
 
 function renderCRMBoard(leads) {
-  const PER_COL = 25; // cap card DOM per column — filters narrow the rest
+  const PER_COL = 25; // cap card DOM per column, filters narrow the rest
   let html = '<div class="kanban-board">';
   STAGES.forEach(stage => {
     const stageLeads = leads.filter(l => l.crm && l.crm.stage === stage.num);
@@ -4602,7 +4662,7 @@ function renderCRMBoard(leads) {
                 <div style="display:flex;gap:var(--space-1);margin-top:var(--space-2);align-items:center;">
                   <button class="btn btn-ghost btn-sm btn-generate-email" style="font-size:0.65rem;padding:2px 8px;min-height:32px;" data-action="generate-email" data-id="${l.id}"><i data-lucide="mail" aria-hidden="true" style="width:11px;height:11px;"></i> Email</button>
                 </div>
-                <!-- Tap-based stage moves — HTML5 drag-and-drop doesn't exist on touch screens -->
+                <!-- Tap-based stage moves, HTML5 drag-and-drop doesn't exist on touch screens -->
                 <div class="kanban-move">
                   <button data-action="kanban-move" data-id="${l.id}" data-dir="-1" ${stage.num <= 1 ? 'disabled' : ''} aria-label="Move to previous stage"><i data-lucide="chevron-left" aria-hidden="true"></i> Back</button>
                   <button data-action="kanban-move" data-id="${l.id}" data-dir="1" ${stage.num >= 6 ? 'disabled' : ''} aria-label="Move to next stage">Next <i data-lucide="chevron-right" aria-hidden="true"></i></button>
@@ -4799,7 +4859,12 @@ function renderMeetings() {
 
   const upcoming = meetingLeads.filter(l => l.crm.meetingDate && new Date(l.crm.meetingDate) >= now);
   const upcomingWeek = upcoming.filter(l => new Date(l.crm.meetingDate) <= weekFromNow);
-  const completed = meetingLeads.filter(l => l.crm.stage >= 4 || (l.crm.meetingDate && new Date(l.crm.meetingDate) < now));
+  // A meeting whose time has passed is NOT automatically a meeting that happened. Counting it
+  // as completed flattered the numbers and, worse, hid the Mark Complete button the moment the
+  // clock passed the slot — so the stage never advanced and leads piled up in Meeting Booked
+  // with nothing telling anyone they needed dealing with.
+  const completed = meetingLeads.filter(l => l.crm.stage >= 4);
+  const awaiting = meetingLeads.filter(l => l.crm.stage < 4 && l.crm.meetingDate && new Date(l.crm.meetingDate) < now);
   const totalBooked = meetingLeads.length;
 
   let html = `
@@ -4813,6 +4878,7 @@ function renderMeetings() {
     <div class="stats-bar">
       <div class="stat-chip"><span>Total Booked:</span><span class="stat-value">${totalBooked}</span></div>
       <div class="stat-chip teal"><span>Upcoming (7 days):</span><span class="stat-value">${upcomingWeek.length}</span></div>
+      ${awaiting.length ? `<div class="stat-chip amber"><span>Needs an outcome:</span><span class="stat-value">${awaiting.length}</span></div>` : ''}
       <div class="stat-chip green"><span>Completed:</span><span class="stat-value">${completed.length}</span></div>
     </div>
   `;
@@ -4851,39 +4917,49 @@ function renderMeetingsList(leads, now) {
     return aDate - bDate;
   });
   const upcoming = sorted.filter(l => l.crm.meetingDate && new Date(l.crm.meetingDate) >= now);
-  const past = sorted.filter(l => l.crm.meetingDate && new Date(l.crm.meetingDate) < now);
+  // Three states, not two. "Past" used to mean "done", which was never true and left the
+  // Mark Complete button unreachable the moment the slot went by.
+  const awaiting = sorted.filter(l => l.crm.stage < 4 && l.crm.meetingDate && new Date(l.crm.meetingDate) < now);
+  const done = sorted.filter(l => l.crm.stage >= 4 && l.crm.meetingDate && new Date(l.crm.meetingDate) < now);
 
+  const heading = (text, extra) => `<h3 style="font-family:var(--font-display);font-weight:600;font-size:var(--text-sm);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;${extra || ''}">${text}</h3>`;
   let html = '<div style="display:flex;flex-direction:column;gap:var(--space-4);">';
 
-  if (upcoming.length) {
-    html += '<h3 style="font-family:var(--font-display);font-weight:600;font-size:var(--text-sm);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;">Upcoming</h3>';
-    upcoming.forEach(l => { html += renderMeetingCard(l, false); });
+  if (awaiting.length) {
+    html += heading('Needs an outcome');
+    awaiting.forEach(l => { html += renderMeetingCard(l, 'awaiting'); });
   }
-  if (past.length) {
-    html += '<h3 style="font-family:var(--font-display);font-weight:600;font-size:var(--text-sm);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-top:var(--space-4);">Past Meetings</h3>';
-    past.forEach(l => { html += renderMeetingCard(l, true); });
+  if (upcoming.length) {
+    html += heading('Upcoming', awaiting.length ? 'margin-top:var(--space-4);' : '');
+    upcoming.forEach(l => { html += renderMeetingCard(l, 'upcoming'); });
+  }
+  if (done.length) {
+    html += heading('Completed', 'margin-top:var(--space-4);');
+    done.forEach(l => { html += renderMeetingCard(l, 'done'); });
   }
   html += '</div>';
   return html;
 }
 
-function renderMeetingCard(l, isPast) {
+function renderMeetingCard(l, mode) {
   const pc = getPrimaryContact(l);
+  const isPast = mode !== 'upcoming';
   return `
-    <div class="card meeting-card ${isPast ? 'past' : ''}">
+    <div class="card meeting-card ${isPast ? 'past' : ''}${mode === 'awaiting' ? ' awaiting' : ''}">
       <div class="meeting-date-display">${l.crm.meetingDate ? formatDateTime(l.crm.meetingDate) : 'No date set'}</div>
       <div class="meeting-card-body">
         <div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap;">
           <span style="font-family:var(--font-display);font-weight:700;">${escapeHtml(l.businessName)}</span>
           ${l.industry ? `<span class="badge badge-neutral">${escapeHtml(l.industry)}</span>` : ''}
           <span class="badge ${getStageBadge(l.crm.stage)}">${getStageName(l.crm.stage)}</span>
-          ${isPast ? '<span class="badge badge-success">Completed</span>' : ''}
+          ${mode === 'done' ? '<span class="badge badge-success">Completed</span>' : ''}
+          ${mode === 'awaiting' ? '<span class="badge badge-orange">Did this happen?</span>' : ''}
         </div>
-        ${pc ? `<div style="font-size:var(--text-sm);color:var(--color-text-muted);">${escapeHtml(pc.name)}${pc.title ? ' - ' + escapeHtml(pc.title) : ''}</div>` : ''}
+        ${pc ? `<div style="font-size:var(--text-sm);color:var(--color-text-muted);">${escapeHtml(pc.name)}${pc.title ? ' &middot; ' + escapeHtml(pc.title) : ''}</div>` : ''}
         ${l.crm.meetingNotes ? `<p style="font-size:var(--text-sm);color:var(--color-text-muted);">${escapeHtml(l.crm.meetingNotes)}</p>` : ''}
         <div class="meeting-card-actions">
-          ${!isPast ? `<button class="btn btn-primary btn-sm" data-action="mark-meeting-complete" data-id="${l.id}"><i data-lucide="check" aria-hidden="true"></i> Mark Complete</button>` : ''}
-          ${!isPast ? `<button class="btn btn-secondary btn-sm" data-action="reschedule-meeting" data-id="${l.id}"><i data-lucide="calendar" aria-hidden="true"></i> Reschedule</button>` : ''}
+          ${mode !== 'done' ? `<button class="btn btn-primary btn-sm" data-action="mark-meeting-complete" data-id="${l.id}"><i data-lucide="check" aria-hidden="true"></i> ${mode === 'awaiting' ? 'It happened' : 'Mark Complete'}</button>` : ''}
+          ${mode !== 'done' ? `<button class="btn btn-secondary btn-sm" data-action="reschedule-meeting" data-id="${l.id}"><i data-lucide="calendar" aria-hidden="true"></i> ${mode === 'awaiting' ? "Didn't happen, rebook" : 'Reschedule'}</button>` : ''}
           <button class="btn btn-ghost btn-sm" data-action="go-to-crm-lead" data-id="${l.id}"><i data-lucide="external-link" aria-hidden="true"></i> View in CRM</button>
         </div>
       </div>
@@ -4901,7 +4977,9 @@ function renderMeetingsCalendar(meetingLeads) {
   const startDayOfWeek = firstDay.getDay();
   const totalDays = lastDay.getDate();
 
-  const todayStr = today.toISOString().split('T')[0];
+  // todayISO, not today.toISOString(): the calendar was highlighting "today" off a UTC date
+  // frozen at page load, so it sat on the wrong square after midnight and after a long session.
+  const todayStr = todayISO;
 
   // Meetings by date
   const meetingsByDate = {};
@@ -4964,7 +5042,8 @@ function renderArchive() {
   const overdueLeads = archived.filter(l => l.crm && l.crm.followUpDate && daysUntil(l.crm.followUpDate) !== null && daysUntil(l.crm.followUpDate) < 0);
 
   let currentLeads;
-  if (state.archiveTab === 'follow_up') currentLeads = followUpLeads;
+  if (state.archiveOverdueOnly) currentLeads = overdueLeads;
+  else if (state.archiveTab === 'follow_up') currentLeads = followUpLeads;
   else if (state.archiveTab === 'not_interested') currentLeads = notInterestedLeads;
   else currentLeads = archivedLeads;
 
@@ -4975,7 +5054,7 @@ function renderArchive() {
   `;
 
   if (overdueLeads.length > 0) {
-    html += `<div class="alert-banner" data-action="filter-overdue-archive"><i data-lucide="alert-triangle" aria-hidden="true"></i> ${overdueLeads.length} lead${overdueLeads.length > 1 ? 's have' : ' has'} overdue follow-up dates</div>`;
+    html += `<div class="alert-banner${state.archiveOverdueOnly ? ' active' : ''}" data-action="filter-overdue-archive"><i data-lucide="alert-triangle" aria-hidden="true"></i> ${overdueLeads.length} lead${overdueLeads.length > 1 ? 's have' : ' has'} overdue follow-up dates. ${state.archiveOverdueOnly ? 'Showing them. Tap to show all.' : 'Tap to see them.'}</div>`;
   }
 
   html += `
@@ -5082,7 +5161,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb1-daily">
-              <p><strong>Ad hoc operational communication</strong> — the rhythm that keeps trust alive day to day.</p>
+              <p><strong>Ad hoc operational communication</strong>, the rhythm that keeps trust alive day to day.</p>
               <ul>
                 <li><strong>Morning check-ins:</strong> Quick scan of all client channels first thing. Acknowledge any overnight messages within the first hour of your day.</li>
                 <li><strong>End-of-day wrap:</strong> Before logging off, ensure every client thread has a response or acknowledgement. No message should sit unanswered overnight.</li>
@@ -5098,9 +5177,9 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb1-weekly">
-              <p><strong>Tactical progress and planning</strong> — predictable, structured, and thorough.</p>
+              <p><strong>Tactical progress and planning</strong>, predictable, structured, and thorough.</p>
               <ul>
-                <li><strong>Status updates:</strong> Top-line numbers, plan for next week, upcoming dates, outstanding actions. Same time each week — Fridays.</li>
+                <li><strong>Status updates:</strong> Top-line numbers, plan for next week, upcoming dates, outstanding actions. Same time each week, Fridays.</li>
                 <li><strong>Format:</strong> Written or deck format. Never verbal-only. The client should be able to share it internally.</li>
                 <li><strong>Agenda structure:</strong> Past week recap, this week's focus, blockers and risks, next steps and actions.</li>
                 <li><strong>Meeting minutes:</strong> Send within 30 minutes of the meeting ending. Include action items with owners and deadlines.</li>
@@ -5114,9 +5193,9 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb1-monthly">
-              <p><strong>Strategic performance review and forward planning</strong> — the meeting that shapes the next 30 days.</p>
+              <p><strong>Strategic performance review and forward planning</strong>, the meeting that shapes the next 30 days.</p>
               <ul>
-                <li><strong>Performance deep dive:</strong> Full review of key metrics — ROAS, CTR, conversion rates, revenue attribution. Not just numbers, but diagnosis and recommendations.</li>
+                <li><strong>Performance deep dive:</strong> Full review of key metrics, ROAS, CTR, conversion rates, revenue attribution. Not just numbers, but diagnosis and recommendations.</li>
                 <li><strong>Next month targets:</strong> Set clear ROAS, CTR, and other KPI targets collaboratively. Document and track against them.</li>
                 <li><strong>Strategic priorities:</strong> What are we investing in this month? What are we pulling back on? Align with the client's business priorities.</li>
                 <li><strong>Financials:</strong> Budget tracking, spend pacing, invoicing status. Transparency builds trust.</li>
@@ -5133,9 +5212,9 @@ function renderPlaybooks() {
             </button>
             <div class="accordion-content" id="acc-pb1-calendar">
               <ul>
-                <li><strong>Monday AM:</strong> Send weekly welcome note to each client — sets the tone for the week, confirms key priorities.</li>
+                <li><strong>Monday AM:</strong> Send weekly welcome note to each client, sets the tone for the week, confirms key priorities.</li>
                 <li><strong>Throughout the week:</strong> Prep for meetings 24+ hours ahead. Never wing it. Have data, have talking points, have answers ready.</li>
-                <li><strong>Friday PM:</strong> Weekly updates written, reviewed, and sent before end of day. This is sacred — never skip.</li>
+                <li><strong>Friday PM:</strong> Weekly updates written, reviewed, and sent before end of day. This is sacred, never skip.</li>
                 <li><strong>Never stack meetings without space between:</strong> Allow 15-30 minutes between calls for notes, follow-ups, and mental reset.</li>
               </ul>
             </div>
@@ -5183,9 +5262,9 @@ function renderPlaybooks() {
             </button>
             <div class="accordion-content" id="acc-pb2-comm">
               <ul>
-                <li><strong>Timeliness:</strong> Respond fast. The speed of your reply signals how much you value the client. Always respond before the client follows up — if they're chasing you, you've already failed.</li>
+                <li><strong>Timeliness:</strong> Respond fast. The speed of your reply signals how much you value the client. Always respond before the client follows up, if they're chasing you, you've already failed.</li>
                 <li><strong>Consistency:</strong> Predictable formats, predictable timing. Clients should know when to expect updates and what they'll look like. Establish a meeting rhythm early.</li>
-                <li><strong>Proactivity:</strong> Get ahead of questions. If you know something is going to come up, address it before they ask. Think ahead — interpret, don't just update.</li>
+                <li><strong>Proactivity:</strong> Get ahead of questions. If you know something is going to come up, address it before they ask. Think ahead, interpret, don't just update.</li>
                 <li><strong>Appropriateness:</strong> Stay professional. Don't let junior staff treat clients casually. Match the client's communication style but always maintain respect.</li>
                 <li><strong>Thoughtfulness:</strong> Tailor your tone to each client. Frame difficult conversations carefully. Every communication should feel considered, not dashed off.</li>
               </ul>
@@ -5216,7 +5295,7 @@ function renderPlaybooks() {
               <ul>
                 <li><strong>Project management:</strong> Track every action item. Use tools like Asana for accountability. Nothing should exist only in someone's memory.</li>
                 <li><strong>Follow-through:</strong> Every item from every meeting gets actioned. If you committed to it, deliver it. If it's blocked, communicate the block and the plan.</li>
-                <li><strong>Quality must be elite:</strong> Not "done" — excellent. Review everything before it goes to the client. Would you be proud to show this to someone you respect?</li>
+                <li><strong>Quality must be elite:</strong> Not "done", excellent. Review everything before it goes to the client. Would you be proud to show this to someone you respect?</li>
                 <li><strong>Avoid these traps:</strong> Sloppy execution, missed deadlines without warning, "just enough" work, letting juniors close out subpar deliverables. These erode trust faster than anything.</li>
               </ul>
             </div>
@@ -5230,13 +5309,13 @@ function renderPlaybooks() {
             <div class="accordion-content" id="acc-pb2-reporting">
               <ul>
                 <li><strong>Consistency:</strong> Same format, same day, same style. Every time. The client should know exactly what they're getting and when.</li>
-                <li><strong>Insight:</strong> Interpret numbers, don't just share them. "CTR dropped 8%, likely creative fatigue — suggest refreshing with variation 3" is infinitely better than "CTR: 1.8%."</li>
+                <li><strong>Insight:</strong> Interpret numbers, don't just share them. "CTR dropped 8%, likely creative fatigue, suggest refreshing with variation 3" is infinitely better than "CTR: 1.8%."</li>
                 <li><strong>Strategic thinking:</strong> Tie numbers to decisions. Every data point should lead to a recommendation or validation of a current approach.</li>
-                <li><strong>Client value:</strong> Spot new opportunities in the data. Be the one who says "I noticed X — have you considered Y?" That's how you become indispensable.</li>
+                <li><strong>Client value:</strong> Spot new opportunities in the data. Be the one who says "I noticed X, have you considered Y?" That's how you become indispensable.</li>
               </ul>
               <div class="playbook-callout">
                 <i data-lucide="lightbulb" aria-hidden="true"></i>
-                <span>Report with diagnosis, not just data. "CTR dropped 8%, likely creative fatigue — suggest refreshing with variation 3" tells a story. "CTR: 1.8%" tells nothing.</span>
+                <span>Report with diagnosis, not just data. "CTR dropped 8%, likely creative fatigue, suggest refreshing with variation 3" tells a story. "CTR: 1.8%" tells nothing.</span>
               </div>
             </div>
           </div>
@@ -5253,7 +5332,7 @@ function renderPlaybooks() {
                 <li><strong>Rapport:</strong> Be enjoyable to work with. Bring energy, positivity, and genuine interest. People choose to continue working with people they like.</li>
                 <li><strong>Influence:</strong> Shape decisions, don't just execute them. When you have influence, you guide the direction rather than just following instructions.</li>
               </ul>
-              <p style="margin-top:var(--space-3);"><strong>You've won when:</strong> the client brings you into strategic discussions, asks your opinion before making changes, listens when you push back, and you're guiding the relationship — not just serving it.</p>
+              <p style="margin-top:var(--space-3);"><strong>You've won when:</strong> the client brings you into strategic discussions, asks your opinion before making changes, listens when you push back, and you're guiding the relationship, not just serving it.</p>
             </div>
           </div>
 
@@ -5295,8 +5374,8 @@ function renderPlaybooks() {
             </button>
             <div class="accordion-content" id="acc-pb3-story">
               <ul>
-                <li><strong>Start with YOUR story (60-90 seconds):</strong> Why you started, what you learned along the way, the types of businesses you work with. This is not a pitch — it's connection. Keep it human.</li>
-                <li><strong>Invite their story:</strong> "Would love to hear about you — how did you get started?" Let them talk. Listen deeply. Note the details that matter to them.</li>
+                <li><strong>Start with YOUR story (60-90 seconds):</strong> Why you started, what you learned along the way, the types of businesses you work with. This is not a pitch, it's connection. Keep it human.</li>
+                <li><strong>Invite their story:</strong> "Would love to hear about you, how did you get started?" Let them talk. Listen deeply. Note the details that matter to them.</li>
                 <li><strong>Frame the call:</strong> "I want to walk through some ideas that could help. We've done our homework and spotted some interesting opportunities." This sets you up as prepared and proactive.</li>
               </ul>
             </div>
@@ -5347,7 +5426,7 @@ function renderPlaybooks() {
               <ul>
                 <li><strong>Small talk first:</strong> Reference something they mentioned on Call 1. "How did that product launch go?" This shows you listened and you care.</li>
                 <li><strong>Set the tone with confidence:</strong> "Since our last call, I've been thinking about how we can help specifically. I've gone back to the team and put together something bespoke for you."</li>
-                <li><strong>Present like an expert, not a vendor:</strong> Paint the future. Don't just describe services — describe what their business looks like 6 months from now with you involved.</li>
+                <li><strong>Present like an expert, not a vendor:</strong> Paint the future. Don't just describe services, describe what their business looks like 6 months from now with you involved.</li>
               </ul>
             </div>
           </div>
@@ -5360,15 +5439,15 @@ function renderPlaybooks() {
             <div class="accordion-content" id="acc-pb3-call2-close">
               <p><strong>The presentation structure that closes:</strong></p>
               <ul>
-                <li><strong>01 — Recap their problems:</strong> Mirror back what they told you. This proves you understood. "Last time we spoke, you mentioned X, Y, and Z..."</li>
-                <li><strong>02 — Frame your solution:</strong> Position your approach as the answer to their specific challenges. Not generic services — specific solutions.</li>
-                <li><strong>03 — Detail deliverables:</strong> What exactly will they get? Be concrete. Timelines, formats, outputs. Remove all ambiguity.</li>
-                <li><strong>04 — Set expectations:</strong> Communication rhythm (weekly updates, Slack access), lead times, review cycles. They should leave knowing exactly what working together feels like.</li>
+                <li><strong>01. Recap their problems:</strong> Mirror back what they told you. This proves you understood. "Last time we spoke, you mentioned X, Y, and Z..."</li>
+                <li><strong>02. Frame your solution:</strong> Position your approach as the answer to their specific challenges. Not generic services, specific solutions.</li>
+                <li><strong>03. Detail deliverables:</strong> What exactly will they get? Be concrete. Timelines, formats, outputs. Remove all ambiguity.</li>
+                <li><strong>04. Set expectations:</strong> Communication rhythm (weekly updates, Slack access), lead times, review cycles. They should leave knowing exactly what working together feels like.</li>
               </ul>
               <p style="margin-top:var(--space-3);"><strong>Sell certainty:</strong> What happens in week 1? When do the first deliverables arrive? What does the communication rhythm look like? The prospect should leave the call with zero anxiety about what happens next.</p>
               <div class="playbook-callout">
                 <i data-lucide="lightbulb" aria-hidden="true"></i>
-                <span>You're not just selling a service — you're selling the feeling of being in safe, expert hands. Every word should build that certainty.</span>
+                <span>You're not just selling a service, you're selling the feeling of being in safe, expert hands. Every word should build that certainty.</span>
               </div>
             </div>
           </div>
@@ -5395,7 +5474,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb4-not-interested">
-              <p><strong>Response:</strong> "Totally understand. Quick question before I let you go — is it the timing, or is it that you don't see a need for [specific service]? Just want to make sure I'm not wasting your time if there's something specific we could help with down the line."</p>
+              <p><strong>Response:</strong> "Totally understand. Quick question before I let you go, is it the timing, or is it that you don't see a need for [specific service]? Just want to make sure I'm not wasting your time if there's something specific we could help with down the line."</p>
               <p style="margin-top:var(--space-3);"><strong>If timing:</strong> "No problem at all. When would be a better time to revisit? I'll make a note and reach out then."</p>
             </div>
           </div>
@@ -5406,7 +5485,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb4-have-agency">
-              <p><strong>Response:</strong> "That's great — having support in place is smart. Out of curiosity, are they covering your [weakest area from qualification]? That's where we tend to see the biggest gaps, even when teams have agencies for the main stuff."</p>
+              <p><strong>Response:</strong> "That's great, having support in place is smart. Out of curiosity, are they covering your [weakest area from qualification]? That's where we tend to see the biggest gaps, even when teams have agencies for the main stuff."</p>
               <p style="margin-top:var(--space-3);"><strong>If they're open:</strong> "Happy to send a short comparison of what we spotted versus what's probably already being handled. No pitch, just clarity."</p>
             </div>
           </div>
@@ -5417,7 +5496,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb4-no-budget">
-              <p><strong>Response:</strong> "Completely fair. Most of our clients felt the same way before they saw the ROI breakdown. Would it help if I sent a quick note showing what a typical engagement looks like in terms of return? No commitment — just numbers."</p>
+              <p><strong>Response:</strong> "Completely fair. Most of our clients felt the same way before they saw the ROI breakdown. Would it help if I sent a quick note showing what a typical engagement looks like in terms of return? No commitment, just numbers."</p>
               <p style="margin-top:var(--space-3);"><strong>Alternative:</strong> "We do have a lighter-touch engagement for businesses that aren't ready for the full programme. Want me to send the details?"</p>
             </div>
           </div>
@@ -5428,7 +5507,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb4-send-email">
-              <p><strong>Response:</strong> "Absolutely, I'll send it over today. Just so I can make it relevant — is it the [Strategy/Experience/Commerce] side that's most interesting to you, or is it more general?"</p>
+              <p><strong>Response:</strong> "Absolutely, I'll send it over today. Just so I can make it relevant, is it the [Strategy/Experience/Commerce] side that's most interesting to you, or is it more general?"</p>
               <div class="playbook-callout">
                 <i data-lucide="lightbulb" aria-hidden="true"></i>
                 <span>This qualifies them AND gives you the angle for the email.</span>
@@ -5442,7 +5521,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb4-how-number">
-              <p><strong>Response:</strong> "We found your business online and thought there was a real opportunity to help. We work with similar businesses in [industry] and noticed [specific observation]. Apologies if the call was unexpected — would email be better?"</p>
+              <p><strong>Response:</strong> "We found your business online and thought there was a real opportunity to help. We work with similar businesses in [industry] and noticed [specific observation]. Apologies if the call was unexpected, would email be better?"</p>
             </div>
           </div>
 
@@ -5452,7 +5531,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb4-too-small">
-              <p><strong>Response:</strong> "That's actually where we do our best work. Most of our clients started as founder-led businesses — the earlier you get the foundations right, the more efficiently you scale. Even a quick audit could save you a lot of time down the road."</p>
+              <p><strong>Response:</strong> "That's actually where we do our best work. Most of our clients started as founder-led businesses, the earlier you get the foundations right, the more efficiently you scale. Even a quick audit could save you a lot of time down the road."</p>
             </div>
           </div>
 
@@ -5462,7 +5541,7 @@ function renderPlaybooks() {
               <i data-lucide="chevron-down" class="acc-icon" aria-hidden="true"></i>
             </button>
             <div class="accordion-content" id="acc-pb4-partner">
-              <p><strong>Response:</strong> "Of course. Would it help if I sent a short one-pager that summarises what we discussed? Makes it easier to share internally. And when do you think you'll have a chance to chat about it — I can follow up then."</p>
+              <p><strong>Response:</strong> "Of course. Would it help if I sent a short one-pager that summarises what we discussed? Makes it easier to share internally. And when do you think you'll have a chance to chat about it, I can follow up then."</p>
             </div>
           </div>
 
@@ -5790,6 +5869,13 @@ document.getElementById('section-crm').addEventListener('click', e => {
     renderCRM();
     return;
   }
+  if (action === 'toggle-stalled') {
+    state.filters.crm.stalled = !state.filters.crm.stalled;
+    savePrefs();
+    state.crmLimit = CRM_PAGE;
+    renderCRM();
+    return;
+  }
   if (action === 'clear-crm-filters') { clearCRMFilters(); renderCRM(); return; }
   if (action === 'generate-email') {
     const lead = getLeadById(id);
@@ -5843,8 +5929,12 @@ document.getElementById('section-crm').addEventListener('click', e => {
     const lead = getLeadById(id);
     if (lead && lead.crm) {
       lead.crm.meetingBooked = !lead.crm.meetingBooked;
-      if (lead.crm.meetingBooked && !lead.crm.meetingDate) {
-        lead.crm.meetingDate = dateTimeFromNow(7, 10, 0);
+      if (lead.crm.meetingBooked) {
+        if (!lead.crm.meetingDate) lead.crm.meetingDate = dateTimeFromNow(7, 10, 0);
+        // The meeting IS the next action. Without this a booked lead had no follow-up date and
+        // fell out of the due list until the day it was too late.
+        lead.crm.followUpDate = String(lead.crm.meetingDate).split('T')[0];
+        if ((lead.crm.stage || 1) < 3) setStage(lead, 3, { silent: true });
       }
       addActivity(lead, lead.crm.meetingBooked ? 'booked a meeting' : 'cancelled meeting');
       saveState();
@@ -6049,8 +6139,12 @@ document.getElementById('section-meetings').addEventListener('click', e => {
     const lead = getLeadById(id);
     if (lead && lead.crm) {
       setStage(lead, 4);
+      // The two days after a meeting are when the deal is won or lost. Book the follow-through
+      // rather than leaving the lead with nothing due.
+      lead.crm.followUpDate = daysFromNow(2);
       saveState();
-      showToast('Meeting marked as completed', 'success');
+      try { CrescendoSync.flush(); } catch (_) {}
+      showToast('Meeting done. Follow up booked for ' + formatDate(lead.crm.followUpDate), 'success');
       renderAll();
     }
   } else if (action === 'reschedule-meeting') {
@@ -6058,8 +6152,12 @@ document.getElementById('section-meetings').addEventListener('click', e => {
     if (lead && lead.crm) {
       // Simple: set to 1 week from now
       lead.crm.meetingDate = dateTimeFromNow(7, 10, 0);
+      // Keep the follow-up pinned to the meeting so it shows in the due list on the day.
+      lead.crm.followUpDate = String(lead.crm.meetingDate).split('T')[0];
+      addActivity(lead, 'rescheduled meeting');
       saveState();
-      showToast('Meeting rescheduled', 'info');
+      try { CrescendoSync.flush(); } catch (_) {}
+      showToast('Rebooked for ' + formatDate(lead.crm.followUpDate), 'info');
       renderMeetings();
     }
   } else if (action === 'go-to-crm-lead') {
@@ -6084,6 +6182,7 @@ document.getElementById('section-archive').addEventListener('click', e => {
 
   if (action === 'archive-tab') {
     state.archiveTab = target.dataset.tab;
+    state.archiveOverdueOnly = false;  // picking a tab means you want that tab, not the filter
     savePrefs();
     renderArchive();
   } else if (action === 'reactivate') {
@@ -6102,8 +6201,9 @@ document.getElementById('section-archive').addEventListener('click', e => {
     showToast('Lead permanently deleted', 'error');
     renderAll();
   } else if (action === 'filter-overdue-archive') {
-    // Just show follow_up tab which is where overdue follow-ups typically are
-    state.archiveTab = 'follow_up';
+    // Actually show the overdue leads. It used to just switch to the Follow Up Later tab and
+    // hope, so clicking the banner often changed nothing visible.
+    state.archiveOverdueOnly = !state.archiveOverdueOnly;
     renderArchive();
   }
 });
@@ -6291,7 +6391,7 @@ document.getElementById('side-panel').addEventListener('submit', e => {
     if (__exactDup) {
       const warn = document.getElementById('dup-warning');
       if (warn) {
-        warn.textContent = '“' + __exactDup.businessName + '” is already in the CRM — open it instead of adding it twice.';
+        warn.textContent = '“' + __exactDup.businessName + '” is already in the CRM, open it instead of adding it twice.';
         warn.style.display = 'block';
       }
       bn.focus();
@@ -7121,7 +7221,7 @@ function pickFounderForLead(lead) {
 function getPrimaryGap(lead) {
   const w = (lead.qualification && lead.qualification.weaknessesOpportunities) || '';
   const first = w.split('\n')[0].replace(/^[-*\s]+/, '').trim();
-  return first || 'Not yet identified — probe for the single biggest friction point in the first 10 minutes.';
+  return first || 'Not yet identified, probe for the single biggest friction point in the first 10 minutes.';
 }
 function getRecommendedAngle(lead) {
   const founder = pickFounderForLead(lead);
@@ -7129,7 +7229,7 @@ function getRecommendedAngle(lead) {
                : founder === 'Ayoub Rasol' ? 'Experience Design'
                : 'Digital Commerce';
   const mapping = {
-    'Strategy & Design': "Lead with positioning. Most of their friction is upstream — the offer, the story, the brand. Show them we fix the root cause, not the symptoms.",
+    'Strategy & Design': "Lead with positioning. Most of their friction is upstream, the offer, the story, the brand. Show them we fix the root cause, not the symptoms.",
     'Experience Design': "Lead with the journey. Their growth ceiling is UX. Walk them through one concrete screen-level improvement we'd ship in week one.",
     'Digital Commerce':  "Lead with the funnel. They're leaking revenue somewhere specific. Name the leak, size it, then show how we plug it."
   };
@@ -7141,20 +7241,20 @@ function getOpeningQuestions(lead) {
   const base = [
     "What's the one thing about how you're growing right now that keeps you up at night?",
     "If we could fix one thing about how customers find you or buy from you, what would it be?",
-    "Who inside your business actually owns this problem — and what have they tried already?"
+    "Who inside your business actually owns this problem, and what have they tried already?"
   ];
-  if (/restaurant|food|bakery|coffee/.test(industry)) base[0] = "Walk me through a typical Friday night — where does the operation feel tightest?";
-  if (/ecommerce|shop|retail/.test(industry)) base[0] = "Where in the funnel are you losing the most — traffic, conversion, or repeat?";
+  if (/restaurant|food|bakery|coffee/.test(industry)) base[0] = "Walk me through a typical Friday night, where does the operation feel tightest?";
+  if (/ecommerce|shop|retail/.test(industry)) base[0] = "Where in the funnel are you losing the most, traffic, conversion, or repeat?";
   return base;
 }
 function getRedFlags(lead) {
   const flags = [];
   const notes = (lead.crm && lead.crm.notes || []).map(n => (n.text || '').toLowerCase()).join(' ');
   const q = lead.qualification || {};
-  if (/budget|cheap|price|cost/i.test(notes)) flags.push("Price-sensitive signals in notes — anchor value early.");
-  if (/agency|consultant|already/i.test(notes)) flags.push("Mentioned existing agency relationship — understand what's working and what's not before positioning us.");
-  if (!q.growthIntent || q.growthIntent.trim().length < 20) flags.push("Growth intent is thin — probe for urgency and specific targets.");
-  if (!lead.crm || !lead.crm.dateFirstContact) flags.push("No prior contact recorded — verify the meeting booking is real before the call.");
+  if (/budget|cheap|price|cost/i.test(notes)) flags.push("Price-sensitive signals in notes, anchor value early.");
+  if (/agency|consultant|already/i.test(notes)) flags.push("Mentioned existing agency relationship, understand what's working and what's not before positioning us.");
+  if (!q.growthIntent || q.growthIntent.trim().length < 20) flags.push("Growth intent is thin, probe for urgency and specific targets.");
+  if (!lead.crm || !lead.crm.dateFirstContact) flags.push("No prior contact recorded, verify the meeting booking is real before the call.");
   return flags;
 }
 function buildBriefText(lead) {
@@ -7168,11 +7268,11 @@ function buildBriefText(lead) {
   const recent = (lead.activity || []).slice(0, 5).map(a => `- ${a.by} ${a.action} (${formatTimeAgo(a.date)})`).join('\n') || '- No recent activity logged';
   const meetingLine = lead.crm && lead.crm.meetingDate ? formatDateTime(lead.crm.meetingDate) : 'Not yet scheduled';
 
-  return `MEETING BRIEF — ${lead.businessName}
+  return `MEETING BRIEF, ${lead.businessName}
 ${lead.industry ? 'Industry: ' + lead.industry : ''}
 
 CONTACT
-${pc.name || '—'}${pc.title ? ', ' + pc.title : ''}
+${pc.name || ', '}${pc.title ? ', ' + pc.title : ''}
 ${pc.email || ''} ${pc.phone || ''}
 
 MEETING
@@ -7183,11 +7283,11 @@ PRIMARY GAP
 ${gap}
 
 QUALIFICATION SUMMARY
-Strategy & Design: ${q.strategyDesign || '—'}
-Experience Design: ${q.experienceDesign || '—'}
-Digital Commerce: ${q.digitalCommerce || '—'}
-Weaknesses / Opportunities: ${q.weaknessesOpportunities || '—'}
-Growth Intent: ${q.growthIntent || '—'}
+Strategy & Design: ${q.strategyDesign || ', '}
+Experience Design: ${q.experienceDesign || ', '}
+Digital Commerce: ${q.digitalCommerce || ', '}
+Weaknesses / Opportunities: ${q.weaknessesOpportunities || ', '}
+Growth Intent: ${q.growthIntent || ', '}
 
 RECENT ACTIVITY
 ${recent}
@@ -7208,7 +7308,7 @@ function openBriefModal(lead) {
   const txt = buildBriefText(lead);
   const html = `
     <div class="modal-header">
-      <h2 id="modal-title">Meeting Brief — ${escapeHtml(lead.businessName)}</h2>
+      <h2 id="modal-title">Meeting Brief, ${escapeHtml(lead.businessName)}</h2>
       <button class="modal-close" data-action="close-modal" aria-label="Close"><i data-lucide="x" aria-hidden="true"></i></button>
     </div>
     <div class="modal-body">
@@ -7230,7 +7330,7 @@ function openBriefModal(lead) {
     navigator.clipboard.writeText(text).then(() => {
       showToast('Brief copied to clipboard', 'success');
     }).catch(() => {
-      showToast('Could not copy — select and copy manually', 'error');
+      showToast('Could not copy, select and copy manually', 'error');
     });
   });
 }
@@ -7243,7 +7343,7 @@ function openOutcomeReasonModal(leadId, mode) {
   if (!lead) return;
   const isWon = mode === 'won';
   const reasons = isWon ? WON_REASONS : LOST_REASONS;
-  const title = isWon ? 'Closed Won — what made the difference?' : 'Closing this lead — why?';
+  const title = isWon ? 'Closed Won, what made the difference?' : 'Closing this lead, why?';
   const html = `
     <div class="modal-header">
       <h2 id="modal-title">${title}</h2>
@@ -7322,7 +7422,7 @@ const CHAT_SYSTEM_PROMPT = `You are Crescendo Brain, the internal AI assistant f
 
 # THE COMPANY
 
-Crescendo Strategy is a founder-led strategic design and digital commerce consultancy based in Cambridge, United Kingdom. We build the systems that let brands earn the trust of the next generation. We don't just advise. We build. We handle strategy, brand, digital infrastructure, and execution. Clients don't get a deck they can't use — they get a system that works.
+Crescendo Strategy is a founder-led strategic design and digital commerce consultancy based in Cambridge, United Kingdom. We build the systems that let brands earn the trust of the next generation. We don't just advise. We build. We handle strategy, brand, digital infrastructure, and execution. Clients don't get a deck they can't use, they get a system that works.
 
 **Contact:** contact@crsndo.com | +44 7777 932 599 | www.crsndo.com
 **Founded:** 2026 (Crescendo Strategy Ltd)
@@ -7341,19 +7441,19 @@ When you write on Crescendo's behalf (emails, scripts, responses), use this voic
 
 # THE FOUNDERS
 
-## Melusi Ndoro — CEO & Creative Director
+## Melusi Ndoro, CEO & Creative Director
 - Leads creative direction, branding, strategic storytelling
 - Client-facing on brand and creative engagements
 - Runs the creative team and output
 - Default founder for general discovery calls
 
-## Joshua Khalili — COO & CSO
+## Joshua Khalili, COO & CSO
 - Leads operational excellence, strategic planning, commercial
 - Background in economics, consulting, and sales
 - Handles strategy-heavy discovery calls
 - Runs internal operations
 
-## Ayoub Rasool — CPM & EIC
+## Ayoub Rasool, CPM & EIC
 - Leads content performance management, editorial strategy, digital engagement
 - Handles content and performance-led discovery calls
 - Runs digital editorial output
@@ -7367,10 +7467,10 @@ When you write on Crescendo's behalf (emails, scripts, responses), use this voic
 # THE SALES TEAM (THE CONSULTANTS)
 
 Four independent contractors who handle the top of funnel:
-- **Muneeb Moiz** — Consultant
-- **Yousuf Zacky** — Consultant
-- **Ameer Munj** — Consultant
-- **Amir Hasbullah** — Consultant
+- **Muneeb Moiz**, Consultant
+- **Yousuf Zacky**, Consultant
+- **Ameer Munj**, Consultant
+- **Amir Hasbullah**, Consultant
 
 Their job: qualify leads, cold call, cold email, follow up, book discovery calls. The founders run the discovery and solution calls and close.
 
@@ -7409,18 +7509,18 @@ They log in with their own name and work one shared pool of ~540 leads in the CR
 **Minimum project engagement: £15,000-£20,000**
 
 ## Engagement Stages
-1. **Discovery call** (30-45 min) — free, build rapport, understand problems, no selling
-2. **Solution call** (45-60 min) — present tailored plan, structure, pricing
-3. **Scoping** — formal proposal, aligned scope
-4. **Foundation Project** — fixed fee, 2-4 months, typically five figures
-5. **Growth Partnership Retainer** — monthly recurring, starts several thousand pounds/month
-6. **Additional Projects** — scoped separately alongside retainer
+1. **Discovery call** (30-45 min), free, build rapport, understand problems, no selling
+2. **Solution call** (45-60 min), present tailored plan, structure, pricing
+3. **Scoping**, formal proposal, aligned scope
+4. **Foundation Project**, fixed fee, 2-4 months, typically five figures
+5. **Growth Partnership Retainer**, monthly recurring, starts several thousand pounds/month
+6. **Additional Projects**, scoped separately alongside retainer
 
 ## Revenue Streams
-- **Foundation Projects** (£15K-£20K+ fixed fee, 2-4 months) — the entry point
-- **Growth Partnership Retainer** (£3K-£10K+/month) — ongoing relationship
-- **Additional Projects** — scoped separately
-- **Performance-based elements** — available for select engagements
+- **Foundation Projects** (£15K-£20K+ fixed fee, 2-4 months), the entry point
+- **Growth Partnership Retainer** (£3K-£10K+/month), ongoing relationship
+- **Additional Projects**, scoped separately
+- **Performance-based elements**, available for select engagements
 
 ## The Four Modules (from our Client Pitch Framework)
 
@@ -7486,18 +7586,18 @@ They log in with their own name and work one shared pool of ~540 leads in the CR
 
 ## The 5 Qualification Areas
 Every lead is assessed against:
-1. **Strategy & Design needs** — brand clarity, positioning, creative direction, story
-2. **Experience Design needs** — UX, digital product experience, user journeys, service design
-3. **Digital Commerce needs** — e-commerce, conversion, digital growth, retention
-4. **Growth Intent** — expanding, hiring, launching products, entering markets
-5. **Weaknesses & Opportunities** — specific gaps we can address
+1. **Strategy & Design needs**, brand clarity, positioning, creative direction, story
+2. **Experience Design needs**, UX, digital product experience, user journeys, service design
+3. **Digital Commerce needs**, e-commerce, conversion, digital growth, retention
+4. **Growth Intent**, expanding, hiring, launching products, entering markets
+5. **Weaknesses & Opportunities**, specific gaps we can address
 
 ## Qualification Scoring (rate each Good/Average/Weak)
-- **Website** — loads fast? Mobile responsive? Clear CTAs? Easy nav?
-- **Brand** — consistent visual identity? Clear positioning? Strong story?
-- **Commerce** — can they actually sell online? Conversion paths clear? Checkout frictionless?
-- **Social** — active channels? Engagement? Content quality?
-- **Competitive** — stand out from peers? Clear differentiation?
+- **Website**, loads fast? Mobile responsive? Clear CTAs? Easy nav?
+- **Brand**, consistent visual identity? Clear positioning? Strong story?
+- **Commerce**, can they actually sell online? Conversion paths clear? Checkout frictionless?
+- **Social**, active channels? Engagement? Content quality?
+- **Competitive**, stand out from peers? Clear differentiation?
 
 ## Fit Assessment (rate Low/Medium/High for each pillar)
 - Is there a Strategy & Design fit?
@@ -7541,7 +7641,7 @@ Identify the #1 area where we can add most value, and the #2. These anchor the o
 - "I'll think about it and get back to you" after a meeting → WARM, follow up in 3 days with value-add
 - Multiple people from same company engaging → HOT
 
-# EMAIL OUTREACH — COMPLETE GUIDE
+# EMAIL OUTREACH, COMPLETE GUIDE
 
 ## Principles
 1. Find the template that matches their situation (role + context + industry)
@@ -7553,45 +7653,45 @@ Identify the #1 area where we can add most value, and the #2. These anchor the o
 ## Email Categories (we have 30+ templates)
 
 ### Section 1: CEO / Founder Outreach (7 templates)
-- 1A. Cold Site Review — General Growth angle
-- 1B. Cold Site Review — Trust and Brand angle
-- 1C. Cold Site Review — Revenue Leakage angle
-- 1D. Warm Visit — Restaurant/Hospitality
-- 1E. Warm Visit — Retail/Product Business
+- 1A. Cold Site Review, General Growth angle
+- 1B. Cold Site Review, Trust and Brand angle
+- 1C. Cold Site Review, Revenue Leakage angle
+- 1D. Warm Visit, Restaurant/Hospitality
+- 1E. Warm Visit, Retail/Product Business
 - 1F. Referral Introduction
 - 1G. Event/Community Connection
 
 ### Section 2: Head of Marketing / Growth (4 templates)
-- 2A. Cold Audit — Funnel and Measurement
-- 2B. Cold Audit — Paid Traffic Efficiency
-- 2C. Warm Context — Post-Event Follow-Up
+- 2A. Cold Audit, Funnel and Measurement
+- 2B. Cold Audit, Paid Traffic Efficiency
+- 2C. Warm Context, Post-Event Follow-Up
 - 2D. Referral Introduction
 
 ### Section 3: Head of Growth / Performance (3 templates)
-- 3A. Cold Audit — Decision Point Friction
-- 3B. Cold Audit — Mobile Conversion Gap
-- 3C. Warm Context — Genuine Product Usage
+- 3A. Cold Audit, Decision Point Friction
+- 3B. Cold Audit, Mobile Conversion Gap
+- 3C. Warm Context, Genuine Product Usage
 
 ### Section 4: Operations / GM (3 templates)
-- 4A. Cold Audit — Practical Friction
-- 4B. Cold Audit — Booking System Friction
-- 4C. Warm Context — Visit or Usage
+- 4A. Cold Audit, Practical Friction
+- 4B. Cold Audit, Booking System Friction
+- 4C. Warm Context, Visit or Usage
 
 ### Section 5: General Inbox / Routing (2 templates)
 - 5A. Simple Routing ("who handles your website")
 - 5B. Direct Value Offer
 
 ### Section 6: Industry-Specific (10 templates)
-- 6A. Healthcare/Clinic — Nurse-Led or Clinical
-- 6B. Healthcare/Clinic — Practice Manager
-- 6C. Restaurant/Hospitality — Owner or Manager
-- 6D. Restaurant/Hospitality — Warm Visit
-- 6E. Tourism/Experiences — Booking Journey
-- 6F. Tourism/Experiences — Warm Usage
-- 6G. E-commerce/Boutique — Cold Audit
-- 6H. E-commerce/Boutique — Warm Context
-- 6I. Professional Services — Cold Audit Positioning
-- 6J. Professional Services — Referral Introduction
+- 6A. Healthcare/Clinic, Nurse-Led or Clinical
+- 6B. Healthcare/Clinic, Practice Manager
+- 6C. Restaurant/Hospitality, Owner or Manager
+- 6D. Restaurant/Hospitality, Warm Visit
+- 6E. Tourism/Experiences, Booking Journey
+- 6F. Tourism/Experiences, Warm Usage
+- 6G. E-commerce/Boutique, Cold Audit
+- 6H. E-commerce/Boutique, Warm Context
+- 6I. Professional Services, Cold Audit Positioning
+- 6J. Professional Services, Referral Introduction
 
 ## Subject Line Patterns That Work
 - "Quick note about {BusinessName}"
@@ -7661,11 +7761,11 @@ crsndo.com
 # OBJECTION HANDLING
 
 ## "We're not interested"
-"Totally understand. Quick question before I let you go — is it the timing, or is it that you don't see a need for {specific service}? Just want to make sure I'm not wasting your time if there's something specific we could help with down the line."
+"Totally understand. Quick question before I let you go, is it the timing, or is it that you don't see a need for {specific service}? Just want to make sure I'm not wasting your time if there's something specific we could help with down the line."
 If timing: "No problem. When would be a better time to revisit? I'll make a note and reach out then."
 
 ## "We already have an agency"
-"That's great — having support in place is smart. Out of curiosity, are they covering your {weakest area from qualification}? That's where we tend to see the biggest gaps, even when teams have agencies for the main stuff."
+"That's great, having support in place is smart. Out of curiosity, are they covering your {weakest area from qualification}? That's where we tend to see the biggest gaps, even when teams have agencies for the main stuff."
 If open: "Happy to send a short comparison of what we spotted versus what's probably already being handled. No pitch, just clarity."
 
 ## "We don't have the budget"
@@ -7673,17 +7773,17 @@ If open: "Happy to send a short comparison of what we spotted versus what's prob
 Alternative: "We do have a lighter-touch engagement for businesses that aren't ready for the full programme. Want me to send the details?"
 
 ## "Send me an email"
-"Absolutely, I'll send it over today. Just so I can make it relevant — is it the {Strategy/Experience/Commerce} side that's most interesting to you, or is it more general?"
+"Absolutely, I'll send it over today. Just so I can make it relevant, is it the {Strategy/Experience/Commerce} side that's most interesting to you, or is it more general?"
 (Qualifies them AND gives you the angle)
 
 ## "How did you get my number?"
-"We found your business online and thought there was a real opportunity to help. We work with similar businesses in {industry} and noticed {specific observation}. Apologies if the call was unexpected — would email be better?"
+"We found your business online and thought there was a real opportunity to help. We work with similar businesses in {industry} and noticed {specific observation}. Apologies if the call was unexpected, would email be better?"
 
 ## "We're too small"
-"That's actually where we do our best work. Most of our clients started as founder-led businesses — the earlier you get the foundations right, the more efficiently you scale. Even a quick audit could save you a lot of time down the road."
+"That's actually where we do our best work. Most of our clients started as founder-led businesses, the earlier you get the foundations right, the more efficiently you scale. Even a quick audit could save you a lot of time down the road."
 
 ## "I need to talk to my partner/team"
-"Of course. Would it help if I sent a short one-pager that summarises what we discussed? Makes it easier to share internally. When do you think you'll have a chance to chat about it — I can follow up then."
+"Of course. Would it help if I sent a short one-pager that summarises what we discussed? Makes it easier to share internally. When do you think you'll have a chance to chat about it, I can follow up then."
 
 # THE DISCOVERY CALL (FOUNDERS RUN THESE)
 
@@ -7711,7 +7811,7 @@ Clean, professional, prepared before you join.
 Let them talk. Listen closely. This is where you find the real problems.
 
 ### Step 4: Frame the Call
-"The goal of today is simple. I want to walk you through some ideas I think could really help. We've done a bit of homework and spotted a few opportunities — I'd love to get your take. If it feels like the right fit, we can take it from there."
+"The goal of today is simple. I want to walk you through some ideas I think could really help. We've done a bit of homework and spotted a few opportunities, I'd love to get your take. If it feels like the right fit, we can take it from there."
 Keep it low-pressure. Position as collaborative.
 
 ### Step 5: Use a Deck (But Don't Read It)
@@ -7724,14 +7824,14 @@ Keep it low-pressure. Position as collaborative.
 If conversation opens up and you sense momentum, close the deck and just talk. Great sales calls feel like great conversations.
 
 ### Step 7: Share Value Mid-Call
-If they mention a problem you can solve — show, don't tell.
+If they mention a problem you can solve, show, don't tell.
 - Pull up an ad example
 - Share a case study live
 - Show a relevant funnel breakdown
 Way more impactful than sending a PDF later.
 
 ### Step 8: End With a Clear Next Step
-"This has been great. Let's take a few days to think things through. How about we jump on a second call next week — same time? I'll send over the slides and a few ideas to explore before then."
+"This has been great. Let's take a few days to think things through. How about we jump on a second call next week, same time? I'll send over the slides and a few ideas to explore before then."
 
 Immediately follow up with:
 - Summary of key points
@@ -7742,9 +7842,9 @@ Immediately follow up with:
 # THE SOLUTION CALL (CLOSE)
 
 ## Re-establish the Relationship Before the Pitch
-Start with small talk — relevant, natural, timely.
-"Hey, last time you mentioned that launch — how did that go?"
-"I saw you guys put something out on Instagram — looked great."
+Start with small talk, relevant, natural, timely.
+"Hey, last time you mentioned that launch, how did that go?"
+"I saw you guys put something out on Instagram, looked great."
 You're signaling you're interested in their world, not just their wallet.
 
 ## Set the Tone With Confidence and Clarity
@@ -7753,18 +7853,18 @@ You're signaling you're interested in their world, not just their wallet.
 This shows three things:
 1. You listened
 2. You've done the work
-3. You're not winging it — this is tailored
+3. You're not winging it, this is tailored
 
 ## Present the Plan Like an Expert, Not a Vendor
 
 ### Structure
 1. **Recap their problems** ("Here's what we heard from you")
 2. **Frame your solution** ("Here's what we'd do to fix that")
-3. **Detail the deliverables** ("This is what you get — X campaigns, Y assets, Z reporting")
+3. **Detail the deliverables** ("This is what you get, X campaigns, Y assets, Z reporting")
 4. **Set the expectation** ("This is how communication will work. Slack, calls, lead times.")
 
 ## Sell Certainty
-Most prospects aren't worried your idea won't work — they're worried YOU won't follow through. Double down on process:
+Most prospects aren't worried your idea won't work, they're worried YOU won't follow through. Double down on process:
 - What happens in Week 1?
 - When do they get the first deliverables?
 - What comms rhythm will you follow?
@@ -7775,14 +7875,14 @@ Make it feel like onboarding with you is stepping into a well-oiled machine.
 
 ## 3 Layers of Interaction
 
-### Daily — Ad Hoc Operational
+### Daily, Ad Hoc Operational
 - Approvals, chasing assets, Slack updates, firefighting
 - Morning check-ins: every AM clients hear from us
 - End-of-day wrap: block time to check every channel
 - Urgent comms: acknowledge fast even if fix is later
 - Be responsive and agile but with boundaries
 
-### Weekly — Tactical Progress + Planning
+### Weekly, Tactical Progress + Planning
 - Status updates, top-line numbers, forward plan
 - Same time each week (Fridays)
 - Consistent format
@@ -7791,7 +7891,7 @@ Make it feel like onboarding with you is stepping into a well-oiled machine.
 - Meeting cadence: past week, this week, blockers, next steps
 - Send meeting minutes within 30 min
 
-### Monthly — Strategic Deep Dive
+### Monthly, Strategic Deep Dive
 - Last month's performance review
 - Next month's targets (ROAS, CTR, etc.)
 - Strategic priorities discussion
@@ -7805,7 +7905,7 @@ Make it feel like onboarding with you is stepping into a well-oiled machine.
 - **Throughout week**: Prep for meetings 24h+ ahead, block follow-up time immediately after calls
 - **Friday PM**: Weekly updates written, reviewed, sent before EOD
 
-# ACCOUNT MANAGEMENT — 5 PILLARS
+# ACCOUNT MANAGEMENT, 5 PILLARS
 
 ## Pillar 1: Communication
 - **Timeliness**: respond fast. Delay = distrust.
@@ -7816,7 +7916,7 @@ Make it feel like onboarding with you is stepping into a well-oiled machine.
 
 ## Pillar 2: Consulting
 - Active consulting, not just delivery
-- Handle problems on the spot — not "I'll get back to you in 3 days"
+- Handle problems on the spot, not "I'll get back to you in 3 days"
 - Share screen, pull up files, jump into the ad manager
 - Ideate live. Brainstorm. Offer next steps.
 - Clients want experts, not middlemen
@@ -7824,7 +7924,7 @@ Make it feel like onboarding with you is stepping into a well-oiled machine.
 ## Pillar 3: Delivery
 - **Project Management**: track every action, no dropped balls
 - **Follow-Through**: if it was discussed in a meeting, it's tracked and done
-- **Quality**: execution must be elite, not "done" — excellent
+- **Quality**: execution must be elite, not "done", excellent
 - **Ownership**: use tools (Asana etc.) for accountability
 
 ## Pillar 4: Reporting
@@ -7845,26 +7945,26 @@ Outcome of doing everything else right:
 
 You've won when: client brings you into strategic discussions, asks your opinion before making changes, listens when you push back, you're guiding not just serving.
 
-# CASE STUDIES (reference only — use these as proof)
+# CASE STUDIES (reference only, use these as proof)
 
 Crescendo has 4 featured case studies on the website:
-- **Tenzing** — details on the website
-- **Golpo** — partnership/business development case
-- **Grand Emily Hotel** — hospitality case
-- **Grenade** — product brand case
+- **Tenzing**, details on the website
+- **Golpo**, partnership/business development case
+- **Grand Emily Hotel**, hospitality case
+- **Grenade**, product brand case
 
 If asked specifics about a case study, admit you have limited details and suggest checking the website or asking a founder. Don't fabricate specifics.
 
 # AI TOOLS THE CONSULTANTS CAN USE
 
 **Research Tools (all free):**
-- ChatGPT / Gemini — summarise a website, identify digital presence gaps
-- Google PageSpeed Insights — check website speed and mobile score
-- BuiltWith — see what tech a site uses
-- SimilarWeb — estimate traffic
-- Hunter.io — find email addresses
-- Apollo.io — find contacts and verify emails
-- This CRM (has Generate Email button — use that, don't hand-write emails)
+- ChatGPT / Gemini, summarise a website, identify digital presence gaps
+- Google PageSpeed Insights, check website speed and mobile score
+- BuiltWith, see what tech a site uses
+- SimilarWeb, estimate traffic
+- Hunter.io, find email addresses
+- Apollo.io, find contacts and verify emails
+- This CRM (has Generate Email button, use that, don't hand-write emails)
 
 **Rule:** Use AI to research. Don't use AI to write your emails directly — the CRM generates them for you, and they're tuned to Crescendo's voice.
 
@@ -7885,7 +7985,7 @@ You help the team with:
 
 ## HOW TO RESPOND
 - Direct, practical, specific. No fluff.
-- Keep answers concise — these are busy salespeople
+- Keep answers concise, these are busy salespeople
 - Use Crescendo's voice when drafting on our behalf
 - Use bullet points when listing options
 - If asked about a specific lead, use the lead data provided
@@ -7897,11 +7997,11 @@ You help the team with:
 
 ## GOOD QUESTIONS YOU CAN ANSWER
 - "I'm calling a craft brewery in Bristol, what angle should I take?"
-- "The lead said they already have an agency — how do I respond?"
+- "The lead said they already have an agency, how do I respond?"
 - "Is this lead hot or warm? They asked about pricing but haven't booked."
 - "Draft a follow-up email to a restaurant lead that didn't respond."
 - "What service pillar fits a boutique hotel with no online booking?"
-- "We had a discovery call — they said budget is a concern. What's next?"
+- "We had a discovery call, they said budget is a concern. What's next?"
 - "Which founder should I book for this lead?"
 - "Summarise what I should say in the first 30 seconds of the call"
 - "What's the best objection response when someone says 'we're too small'?"
@@ -8088,7 +8188,7 @@ async function testGeminiConnection() {
     const data = await resp.json();
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (reply) {
-      resultEl.textContent = 'Success — Gemini responded.';
+      resultEl.textContent = 'Success, Gemini responded.';
       resultEl.style.color = 'var(--color-success, #1a7f37)';
     } else {
       resultEl.textContent = 'Unexpected response shape.';
@@ -8257,8 +8357,9 @@ async function startSharedSync() {
         if (remoteWins) { r.__remoteStamped = true; byId.set(r.id, r); }
         // else keep local (an unpushed edit, or a tie) and let it push on next saveState.
       }
-      // Surface the first-snapshot empty-cloud signal to the deferred seed-push gate.
-      if (meta.firstSnapshot) { CrescendoSync.__cloudKnownEmpty = !!meta.cloudEmpty; }
+      // Surface the first-snapshot empty-cloud signal to the deferred seed-push gate. A
+      // cache-only snapshot must never answer this — see the CACHE SAFETY note in subscribe().
+      if (meta.firstSnapshot && !meta.fromCache) { CrescendoSync.__cloudKnownEmpty = !!meta.cloudEmpty; }
       // Drop the fictional sample leads once real cloud data is present.
       let merged = Array.from(byId.values());
       if (remoteLeads.length > 0) merged = merged.filter(l => l && l.source !== 'sample');
@@ -8281,10 +8382,10 @@ async function startSharedSync() {
         const __akey = a => `${(a && a.date) || ''}|${(a && a.action) || ''}|${(a && a.by) || ''}`;
         merged = merged.filter(l => {
           if (!l) return false;
-          if (__remoteIds.has(l.id)) return true;            // canonical cloud lead — keep
+          if (__remoteIds.has(l.id)) return true;            // canonical cloud lead, keep
           const k = (l.businessName || '').trim().toLowerCase();
           const canon = k ? __canonByName.get(k) : null;
-          if (!canon || canon === l) return true;            // genuinely new lead — keep & sync
+          if (!canon || canon === l) return true;            // genuinely new lead, keep & sync
           // duplicate of an existing cloud lead → fold activity into the canonical lead, drop clone.
           const have = new Set((canon.activity || []).map(__akey));
           for (const a of (l.activity || [])) {

@@ -13,3 +13,4 @@ crescendo-crm.backup-*.html
 !.env.example
 !.env.sample
 !.env.template
+node_modules
