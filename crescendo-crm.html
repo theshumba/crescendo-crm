@@ -837,6 +837,11 @@ button { -webkit-tap-highlight-color: transparent; }
 .lead-card-phone { display: inline-flex; align-items: center; gap: 4px; color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px; }
 .lead-card-phone i { width: 12px; height: 12px; }
 .lead-card-nophone { color: var(--color-text-faint); }
+.work-list-btn { margin-right: var(--space-1); }
+.crm-sheet-bar.working { background: var(--color-primary-highlight); border-bottom-color: var(--color-primary); }
+.crm-sheet-skip { margin-left: var(--space-1); }
+.report-rate { font-size: var(--text-2xs); font-weight: 600; color: var(--color-text-muted); }
+.priority-more { padding: var(--space-3); font-size: var(--text-xs); color: var(--color-text-muted); display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .qual-bulk-row { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-2); }
 .lead-card .bulk-check { margin-right: 6px; vertical-align: -1px; }
 .lead-card.selected { border-color: var(--color-primary); box-shadow: 0 0 0 1px var(--color-primary) inset; }
@@ -1310,6 +1315,7 @@ const state = {
   crmDetailsOpen: {},   // per-lead expanded state for the mobile CRM card details
   crmSheetId: null,     // lead whose full record is open over the board (null = closed)
   pendingCall: null,    // {id, at} — lead just dialled, outcome asked for on return
+  workList: null,       // frozen queue of due lead ids while working the list
   lbLimit: 60,          // lead-bank incremental render limit (reset on filter change)
   crmLimit: 40,         // CRM list incremental render limit
   qualLimit: 60         // qualified-leads incremental render limit
@@ -1975,6 +1981,14 @@ const CALL_OUTCOMES = [
   { value: 'not_interested', label: 'Not interested' }
 ];
 function callOutcomeLabel(v) { return (CALL_OUTCOMES.find(o => o.value === v) || {}).label || v; }
+// Read the outcome back out of a logged-call activity line, so reports can tell a conversation
+// apart from a voicemail instead of lumping every dial together as "calls".
+function callOutcomeFromActivity(action) {
+  const m = String(action || '').match(/^logged call \((.+)\)$/);
+  if (!m) return '';
+  const o = CALL_OUTCOMES.find(x => x.label === m[1]);
+  return o ? o.value : '';
+}
 // What each outcome means for the next step. Logging a call used to leave the follow-up date
 // untouched, so a lead you rang and missed dropped out of every due view and was never rung
 // again — 200+ leads sat in the pipeline with no date on them. Every outcome now books the
@@ -3425,7 +3439,8 @@ function renderHome() {
   const overdueFollowUps = myLeads.filter(l => l.crm && l.crm.followUpDate && daysUntil(l.crm.followUpDate) !== null && daysUntil(l.crm.followUpDate) < 0);
   const meetingsToday = myLeads.filter(l => l.crm && l.crm.meetingBooked && l.crm.meetingDate && isTodayISO(l.crm.meetingDate));
 
-  // New responses: leads with activity in last 2 days (that isn't your own)
+  // Leads touched in the last 48 hours. The old label said "New responses", which this has
+  // never measured — there is no inbound channel, and the count included the rep's own calls.
   const twoDaysAgo = Date.now() - 2 * 86400000;
   const newResponses = myLeads.filter(l => (l.activity || []).some(a => new Date(a.date).getTime() >= twoDaysAgo));
 
@@ -3436,7 +3451,12 @@ function renderHome() {
     .slice(0, 3);
 
   const priorities = [];
-  overdueFollowUps.slice(0, 5).forEach(l => priorities.push({ type: 'overdue', lead: l, label: 'Overdue follow-up', meta: `${Math.abs(daysUntil(l.crm.followUpDate))} days overdue` }));
+  // Meetings first, then the most overdue, then today's. Overdue used to be capped at 5, so a
+  // rep with 40 of them saw five and nothing told them the other 35 existed.
+  overdueFollowUps
+    .slice()
+    .sort((a, b) => daysUntil(a.crm.followUpDate) - daysUntil(b.crm.followUpDate))
+    .forEach(l => priorities.push({ type: 'overdue', lead: l, label: 'Overdue follow-up', meta: `${Math.abs(daysUntil(l.crm.followUpDate))} days overdue` }));
   followUpsToday.forEach(l => priorities.push({ type: 'today', lead: l, label: 'Follow-up today', meta: 'Due today' }));
   meetingsToday.forEach(l => priorities.push({ type: 'today', lead: l, label: 'Meeting today', meta: formatDateTime(l.crm.meetingDate) }));
   topOpps.forEach(l => priorities.push({ type: 'opportunity', lead: l, label: 'High-score opportunity', meta: `Score ${getOpportunityScore(l)} &middot; not contacted` }));
@@ -3456,7 +3476,7 @@ function renderHome() {
   const pipelineLabel = isAggregate ? 'Team pipeline' : 'Your pipeline';
   const meetingsLabel = isAggregate ? 'Team meetings this week' : 'Meetings this week';
   const followUpLabel = isAggregate ? 'Team follow-ups due' : 'Follow-ups due today';
-  const respLabel = isAggregate ? 'Team responses (48h)' : 'New responses (48h)';
+  const respLabel = isAggregate ? 'Team worked (48h)' : 'Leads worked (48h)';
 
   const html = `
     <div class="home-greeting">
@@ -3486,7 +3506,7 @@ function renderHome() {
         <h2 class="home-section-title">Today's priorities</h2>
         ${priorities.length === 0 ? `<div class="priority-item"><div><div class="pi-title">Inbox zero</div><div class="pi-meta">No overdue items, no meetings today, no urgent follow-ups.</div></div></div>` : `
         <div class="priority-list">
-          ${priorities.slice(0, 12).map(p => `
+          ${priorities.slice(0, 25).map(p => `
             <div class="priority-item ${p.type}" data-action="home-goto-lead" data-id="${p.lead.id}" role="button" tabindex="0">
               <div>
                 <div class="pi-title">${escapeHtml(p.lead.businessName)} &middot; ${p.label}</div>
@@ -3496,6 +3516,7 @@ function renderHome() {
               <button class="btn btn-primary btn-sm" data-action="home-contact-lead" data-id="${p.lead.id}">${p.type === 'today' && p.label === 'Meeting today' ? 'Open' : 'Contact Now'}</button>
             </div>
           `).join('')}
+          ${priorities.length > 25 ? `<div class="priority-more">${priorities.length - 25} more waiting. <button class="btn btn-ghost btn-sm" data-action="home-open-followups">Work them in Outreach</button></div>` : ''}
         </div>`}
       </div>
       <div>
@@ -3504,7 +3525,7 @@ function renderHome() {
         <div class="recent-activity-feed">
           ${recent.map(a => `
             <div class="recent-activity-item">
-              <div><strong>${escapeHtml(a.by)}</strong> ${escapeHtml(a.action)} &mdash; ${escapeHtml(a.leadName)}</div>
+              <div><strong>${escapeHtml(a.by)}</strong> ${escapeHtml(a.action)} &middot; ${escapeHtml(a.leadName)}</div>
               <div class="ra-meta">${formatTimeAgo(a.date)}</div>
             </div>
           `).join('')}
@@ -4136,6 +4157,7 @@ function renderCRM() {
   const fu = followUpCounts(cohort);
   const workedToday = cohort.filter(isTouchedToday).length;
   const activeFilters = activeCRMFilters();
+  const dueNow = dueQueue().length;
 
   container.innerHTML = `
     <div class="section-header">
@@ -4155,6 +4177,7 @@ function renderCRM() {
     </div>
     <div class="followup-strip" role="group" aria-label="Follow-ups">
       <span class="followup-strip-label"><i data-lucide="bell" aria-hidden="true"></i> Follow-ups</span>
+      ${dueNow ? `<button class="btn btn-primary btn-sm work-list-btn" data-action="start-work-list"><i data-lucide="play" aria-hidden="true"></i> Work the list (${dueNow})</button>` : ''}
       <button class="fu-chip fu-overdue${f.followUp==='overdue'?' active':''}" data-action="follow-up-filter" data-bucket="overdue" aria-pressed="${f.followUp==='overdue'}"><strong>${fu.overdue}</strong> overdue</button>
       <button class="fu-chip fu-today${f.followUp==='today'?' active':''}" data-action="follow-up-filter" data-bucket="today" aria-pressed="${f.followUp==='today'}"><strong>${fu.today}</strong> due today</button>
       <button class="fu-chip${f.followUp==='week'?' active':''}" data-action="follow-up-filter" data-bucket="week" aria-pressed="${f.followUp==='week'}"><strong>${fu.week}</strong> next 7 days</button>
@@ -4245,7 +4268,10 @@ function renderCRMSheet(leads) {
   if (!id) { host.innerHTML = ''; return; }
   const lead = getLeadById(id);
   if (!lead || lead.status !== 'crm') { state.crmSheetId = null; host.innerHTML = ''; return; }
-  const order = (leads || []).map(l => l.id);
+  // In work-the-list mode the queue is the frozen due list, not whatever the filters currently
+  // show — otherwise logging a call would drop the lead out and renumber everything mid-run.
+  const working = Array.isArray(state.workList) && state.workList.length > 0;
+  const order = working ? state.workList : (leads || []).map(l => l.id);
   const idx = order.indexOf(id);
   const pos = idx >= 0 ? `${idx + 1} of ${order.length}` : '';
   const pc = getPrimaryContact(lead);
@@ -4258,11 +4284,15 @@ function renderCRMSheet(leads) {
   host.innerHTML = `
     <div class="crm-sheet-overlay" data-action="close-crm-sheet"></div>
     <div class="crm-sheet" role="dialog" aria-modal="true" aria-label="${escapeHtml(lead.businessName)}">
-      <div class="crm-sheet-bar">
+      <div class="crm-sheet-bar${working ? ' working' : ''}">
         <button class="crm-sheet-nav" data-action="crm-sheet-nav" data-dir="-1" ${idx <= 0 ? 'disabled' : ''} aria-label="Previous lead"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
-        <span class="crm-sheet-pos">${pos}</span>
+        <span class="crm-sheet-pos">${working ? 'Working ' : ''}${pos}</span>
         <button class="crm-sheet-nav" data-action="crm-sheet-nav" data-dir="1" ${idx < 0 || idx >= order.length - 1 ? 'disabled' : ''} aria-label="Next lead"><i data-lucide="chevron-right" aria-hidden="true"></i></button>
-        <button class="crm-sheet-close" data-action="close-crm-sheet" aria-label="Close"><i data-lucide="x" aria-hidden="true"></i></button>
+        ${working ? (idx >= order.length - 1
+          // Last lead in the run: the only way out was the X, which read as abandoning it.
+          ? `<button class="btn btn-primary btn-sm crm-sheet-skip" data-action="finish-work-list">Finish</button>`
+          : `<button class="btn btn-secondary btn-sm crm-sheet-skip" data-action="crm-sheet-nav" data-dir="1">Skip</button>`) : ''}
+        <button class="crm-sheet-close" data-action="close-crm-sheet" aria-label="${working ? 'Finish list' : 'Close'}"><i data-lucide="x" aria-hidden="true"></i></button>
       </div>
       <div class="crm-sheet-body">
         <div class="crm-sheet-contact">
@@ -4286,7 +4316,59 @@ function closeCRMSheet() {
   if (!state.crmSheetId) return;
   state.crmDetailsOpen[state.crmSheetId] = false;
   state.crmSheetId = null;
+  state.workList = null;
   renderCRMListView();
+}
+
+// ===== WORK THE LIST =====
+// Sit down, press one button, and go through everything that is due one lead at a time:
+// record open, number in front of you, log the outcome, next. Reps were hunting for their own
+// follow-ups a card at a time, which is why so many never got made.
+// The queue is FROZEN when you start. Logging a call pushes a lead's follow-up date into the
+// future, so a live re-filter would pull leads out from under the rep mid-session.
+function dueQueue() {
+  const f = state.filters.crm;
+  let leads = state.leads.filter(l => l.status === 'crm' && l.crm);
+  if (f.assignedTo !== 'all') leads = leads.filter(l => l.assignedTo === f.assignedTo);
+  return leads
+    .filter(l => {
+      const b = followUpBucket(l);
+      return b === 'overdue' || b === 'today' ||
+             (l.crm.meetingBooked && l.crm.meetingDate && isTodayISO(l.crm.meetingDate));
+    })
+    .sort((a, b) => {
+      const da = daysUntil(a.crm.followUpDate), db = daysUntil(b.crm.followUpDate);
+      return (da === null ? 1 : da) - (db === null ? 1 : db);   // most overdue first
+    });
+}
+function startWorkList() {
+  const q = dueQueue();
+  if (!q.length) { showToast('Nothing due right now. Good place to be.', 'info'); return; }
+  state.workList = q.map(l => l.id);
+  openCRMSheet(state.workList[0]);
+}
+// Move to the next lead still in the queue, skipping any that were archived or deleted mid-run.
+function advanceWorkList(dir) {
+  const list = state.workList;
+  if (!list || !list.length) return false;
+  let i = list.indexOf(state.crmSheetId);
+  if (i < 0) i = dir > 0 ? -1 : list.length;
+  for (let step = i + dir; step >= 0 && step < list.length; step += dir) {
+    const l = getLeadById(list[step]);
+    if (l && l.status === 'crm') {
+      state.crmDetailsOpen[state.crmSheetId] = false;
+      openCRMSheet(list[step]);
+      return true;
+    }
+  }
+  return false;
+}
+function finishWorkList() {
+  const done = (state.workList || []).length;
+  state.workList = null;
+  closeCRMSheet();
+  showSection('crm');
+  showToast(done ? 'List worked. ' + done + ' lead' + (done === 1 ? '' : 's') + ' covered.' : 'List closed.', 'success');
 }
 
 function renderCRMList(leads) {
@@ -5486,12 +5568,18 @@ document.getElementById('section-home').addEventListener('click', e => {
     const hasPhone = lead && (((lead.phones || []).some(p => p && p.number)) || ((lead.contacts || []).some(c => c && c.phone)));
     if (hasPhone) { openDialer(id); return; } // "Contact Now" goes straight to the dialer
   }
+  if (action === 'home-open-followups') { showSection('crm'); startWorkList(); return; }
   if (action === 'home-goto-lead' || action === 'home-contact-lead') {
     const lead = getLeadById(id);
     if (lead) {
-      if (lead.status === 'crm') showSection('crm');
-      else if (lead.status === 'qualified') showSection('qualified-leads');
-      else showSection('lead-bank');
+      if (lead.status === 'crm') {
+        // Land ON the lead, not just on the section. Dropping the rep into a 200-card list and
+        // leaving them to find the name they just tapped was the old behaviour.
+        showSection('crm');
+        openCRMSheet(lead.id);
+      }
+      else if (lead.status === 'qualified') { showSection('qualified-leads'); openPanel('view-lead', lead); }
+      else { showSection('lead-bank'); openPanel('view-lead', lead); }
     }
   }
 });
@@ -5670,15 +5758,22 @@ document.getElementById('section-crm').addEventListener('click', e => {
   if (action === 'open-crm-sheet') { openCRMSheet(id); return; }
   if (action === 'close-crm-sheet') { closeCRMSheet(); return; }
   if (action === 'crm-sheet-nav') {
+    const dir = parseInt(target.dataset.dir, 10);
+    if (Array.isArray(state.workList) && state.workList.length) {
+      if (!advanceWorkList(dir) && dir > 0) finishWorkList();
+      return;
+    }
     const { leads } = getFilteredCRM();
     const order = leads.map(l => l.id);
-    const i = order.indexOf(state.crmSheetId) + parseInt(target.dataset.dir, 10);
+    const i = order.indexOf(state.crmSheetId) + dir;
     if (i >= 0 && i < order.length) {
       state.crmDetailsOpen[state.crmSheetId] = false;
       openCRMSheet(order[i]);
     }
     return;
   }
+  if (action === 'start-work-list') { startWorkList(); return; }
+  if (action === 'finish-work-list') { finishWorkList(); return; }
   if (action === 'follow-up-filter') {
     const b = target.dataset.bucket;
     // Second tap on the active chip clears it — reps get stuck in a filter otherwise.
@@ -5821,9 +5916,15 @@ document.getElementById('section-crm').addEventListener('change', e => {
         if (outcome !== 'not_interested' && lead.crm.followUpDate) msg += ' · follow up ' + formatDate(lead.crm.followUpDate);
       }
       showToast(msg, 'success');
-      // Not interested is the end of the road — go straight to the reason + archive flow
+      // Not interested is the end of the road: go straight to the reason + archive flow
       // rather than leaving the lead sitting in the pipeline.
-      if (outcome === 'not_interested') openOutcomeReasonModal(id, 'not_interested');
+      if (outcome === 'not_interested') { openOutcomeReasonModal(id, 'not_interested'); renderCRM(); renderSidebarBadges(); return; }
+      // Working the list: this lead is done, move the rep straight on to the next one.
+      if (Array.isArray(state.workList) && state.workList.length && state.crmSheetId === id) {
+        if (!advanceWorkList(1)) finishWorkList();
+        renderSidebarBadges();
+        return;
+      }
       renderCRM();
       renderSidebarBadges();
     }
@@ -6748,24 +6849,47 @@ function renderReports() {
     }, 0);
   }
 
+  // Conversations = dials where the rep actually reached a human. Lumping those in with
+  // voicemails made "Calls Logged" a measure of effort with nothing to show effectiveness.
+  function countConversations(user) {
+    return state.leads.reduce((count, lead) => {
+      if (!lead.activity) return count;
+      return count + lead.activity.filter(a => {
+        if (user && a.by !== user) return false;
+        if (rangeStart && new Date(a.date) < rangeStart) return false;
+        if (rangeEnd && new Date(a.date) > rangeEnd) return false;
+        const o = callOutcomeFromActivity(a.action);
+        return !!o && o !== 'not_interested' && (CALL_NEXT_STEP[o] || {}).spoke;
+      }).length;
+    }, 0);
+  }
+
   const currentUser = getCurrentUser();
-  const users = canViewActivityMonitor() ? [...CONSULTANTS, ...CEOS] : [currentUser];
+  // SALES_TEAM, not [...CONSULTANTS, ...CEOS] — the 2026-07-30 selling-leaders change never
+  // reached this screen, so the report listed oversight-only logins (all zeros, always) and
+  // presented them alongside people who actually work leads.
+  const users = canViewActivityMonitor() ? [...SALES_TEAM] : [currentUser];
 
   function renderUserStats(user) {
     const calls = countLoggedCalls(user);
-    const emails = countActions(user, 'added note');
+    const convos = countConversations(user);
+    const notes = countActions(user, 'added note');
     const qualified = countActions(user, 'qualified');
     const movedCRM = countActions(user, 'moved to CRM');
-    const meetings = state.leads.filter(l => l.crm && l.crm.meetingBooked && l.assignedTo === user).length;
+    // Meetings booked IN THIS RANGE. It used to count every meeting the rep had ever booked,
+    // so the number sat still no matter which period you picked.
+    const meetings = countActions(user, 'booked a meeting');
     const followUps = countFollowUpsDue(user);
+    const connectRate = calls ? Math.round((convos / calls) * 100) : 0;
     return `
       <div class="report-user-card">
         <h3>${escapeHtml(user)}</h3>
         <div class="report-user-stat"><span>Calls Logged</span><strong>${calls}</strong></div>
-        <div class="report-user-stat"><span>Notes Added</span><strong>${emails}</strong></div>
+        <div class="report-user-stat"><span>Conversations</span><strong>${convos}${calls ? ` <span class="report-rate">${connectRate}%</span>` : ''}</strong></div>
+        <div class="report-user-stat"><span>Meetings Booked</span><strong>${meetings}</strong></div>
         <div class="report-user-stat"><span>Leads Qualified</span><strong>${qualified}</strong></div>
         <div class="report-user-stat"><span>Moved to CRM</span><strong>${movedCRM}</strong></div>
-        <div class="report-user-stat"><span>Meetings Booked</span><strong>${meetings}</strong></div>
+        <div class="report-user-stat"><span>Notes Added</span><strong>${notes}</strong></div>
         <div class="report-user-stat"><span>Follow-ups Due (7d)</span><strong>${followUps}</strong></div>
       </div>
     `;
