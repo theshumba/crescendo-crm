@@ -14,3 +14,13 @@ crescendo-crm.backup-*.html
 !.env.sample
 !.env.template
 node_modules
+
+# Cambridge research: raw crawl caches and screenshots.
+# 55MB of other people's scraped HTML, re-fetchable by re-running enrich3.py / ch4.py.
+research/cambridge/pages3/
+research/cambridge/ch3/
+research/cambridge/pages/
+research/cambridge/sites/
+research/cambridge/ch/
+research/cambridge/*.png
+research/cambridge/batch*.json

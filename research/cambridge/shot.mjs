@@ -1,0 +1,12 @@
+import puppeteer from '/Users/theshumba/Documents/GitHub/crescendo-crm/node_modules/puppeteer-core/lib/esm/puppeteer/puppeteer-core.js';
+const b=await puppeteer.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:'new',args:['--no-sandbox']});
+const p=await b.newPage(); await p.setViewport({width:1500,height:1050,deviceScaleFactor:2});
+await p.setRequestInterception(true);
+p.on('request',r=>/firebase|firestore|gstatic|googleapis|google\.com/.test(r.url())?r.abort():r.continue());
+await p.evaluateOnNewDocument(u=>{localStorage.setItem('crescendo-crm-user',u);localStorage.setItem('crescendo-team-gate','1');},'Ameer Munj');
+await p.goto('file:///Users/theshumba/Documents/GitHub/crescendo-crm/crescendo-crm.html',{waitUntil:'networkidle0'});
+await new Promise(r=>setTimeout(r,2000));
+await p.evaluate(()=>{showSection('cambridge-boutique');renderCambridgeBoutique();});
+await new Promise(r=>setTimeout(r,700));
+await p.screenshot({path:'/private/tmp/claude-501/-Users-theshumba/f1c00501-bc1c-4e62-aa8c-40bd7e22b950/scratchpad/cam/desk.png'});
+await b.close();

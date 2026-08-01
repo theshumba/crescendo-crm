@@ -1,0 +1,765 @@
+[
+ {
+  "name": "Advanced Cleaning Services",
+  "website": "https://acs-clean.co.uk",
+  "town": "Ely",
+  "category": "Commercial cleaning",
+  "owner": "Chris Broadley"
+ },
+ {
+  "name": "Ago Drive Driving School",
+  "website": "https://agodrive.co.uk",
+  "town": "Burwell",
+  "category": "Driving school",
+  "owner": "Adrian David Rix"
+ },
+ {
+  "name": "Alexander Greens Cambridge",
+  "website": "https://alexandergreens.co.uk",
+  "town": "Sawston",
+  "category": "Restaurant",
+  "owner": "Jonathan Wright"
+ },
+ {
+  "name": "All Eyes Spectacle Makers",
+  "website": "https://all-eyes.co.uk",
+  "town": "Over",
+  "category": "Optician",
+  "owner": "Jeremy Paul Izard"
+ },
+ {
+  "name": "Amin Martial Arts Cambridge",
+  "website": "https://aminmartialarts.com",
+  "town": "Cambridge",
+  "category": "Martial arts",
+  "owner": "Anayah Abulhoul"
+ },
+ {
+  "name": "Barker Bros Butchers",
+  "website": "https://barkerbrosbutchers.co.uk",
+  "town": "Great Shelford",
+  "category": "Butcher",
+  "owner": "David Barker"
+ },
+ {
+  "name": "Barnwell Barbers",
+  "website": "https://barnwellbarbers.co.uk",
+  "town": "Cambridge",
+  "category": "Barber",
+  "owner": "Paul McGeorge"
+ },
+ {
+  "name": "Boxed Events",
+  "website": "https://boxedevents.co.uk",
+  "town": "Cambridge",
+  "category": "Catering & events",
+  "owner": "James Knight"
+ },
+ {
+  "name": "Buds Fitness",
+  "website": "https://budsfitness.co.uk",
+  "town": "Sawtry",
+  "category": "Fitness coaching",
+  "owner": "Abigail Baker"
+ },
+ {
+  "name": "Burr Bridal",
+  "website": "https://burrbridal.co.uk",
+  "town": "Cambridge",
+  "category": "Bridal boutique",
+  "owner": "Kim Burr"
+ },
+ {
+  "name": "Bush & Co",
+  "website": "https://bushandco.co.uk",
+  "town": "Cambridge",
+  "category": "Estate agent",
+  "owner": "Andrew Bush"
+ },
+ {
+  "name": "Cam Osteopathy",
+  "website": "https://camosteopathy.co.uk",
+  "town": "Cambridge",
+  "category": "Osteopathy",
+  "owner": "Ian Lewis"
+ },
+ {
+  "name": "Cambridge Chiropody and Podiatry",
+  "website": "https://cambridgepodiatry.co.uk",
+  "town": "Cambridge",
+  "category": "Podiatry",
+  "owner": "Gary Roger Hinton"
+ },
+ {
+  "name": "Cambridge Clear Beauty",
+  "website": "https://cambridgeclearbeauty.co.uk",
+  "town": "Sawston",
+  "category": "Cosmetic surgery clinic",
+  "owner": "Tariq Ahmad"
+ },
+ {
+  "name": "Cambridge Clocks",
+  "website": "https://cambridgeclocks.com",
+  "town": "Cambridge",
+  "category": "Clock repair",
+  "owner": "Thomas Jackson"
+ },
+ {
+  "name": "Cambridge Counselling Service",
+  "website": "https://cambridgecounsellingservice.co.uk",
+  "town": "Cambridge",
+  "category": "Counselling",
+  "owner": "Erica Briscoe"
+ },
+ {
+  "name": "Cambridge Crafted Kitchens",
+  "website": "https://cambridgecraftedkitchens.co.uk",
+  "town": "Lode",
+  "category": "Kitchen design",
+  "owner": "Dylan Wade-Gledhill"
+ },
+ {
+  "name": "Cambridge Cycle Company",
+  "website": "https://cambridgecyclecompany.co.uk",
+  "town": "Sawston",
+  "category": "Bike shop",
+  "owner": "Darren Peter Sansom"
+ },
+ {
+  "name": "Cambridge Dental",
+  "website": "https://cambridge.dental",
+  "town": "Cambridge",
+  "category": "Private dentist",
+  "owner": "Dr Geeta Bellis"
+ },
+ {
+  "name": "Cambridge Hearing and Balance",
+  "website": "https://cambridgehearingandbalance.co.uk",
+  "town": "Cambridge",
+  "category": "Audiology",
+  "owner": "Patrick Axon"
+ },
+ {
+  "name": "Cambridge Imprint",
+  "website": "https://cambridgeimprint.co.uk",
+  "town": "Cambridge",
+  "category": "Patterned paper & homeware",
+  "owner": "Claerwen Laura James"
+ },
+ {
+  "name": "Cambridge Laser Clinic",
+  "website": "https://cambridgelaserclinic.com",
+  "town": "Cambridge",
+  "category": "Laser & skin clinic",
+  "owner": "Dr Nathan Holt"
+ },
+ {
+  "name": "Cambridge Montessori Nursery School",
+  "website": "https://montessoricambridge.co.uk",
+  "town": "Cambridge",
+  "category": "Nursery & pre-school",
+  "owner": "Arthur Max Gordon-Smith"
+ },
+ {
+  "name": "Cambridge Osteopaths",
+  "website": "https://cambridgeosteopaths.com",
+  "town": "Cambridge",
+  "category": "Osteopathy",
+  "owner": "Alexander Taylor"
+ },
+ {
+  "name": "Cambridge Osteopathy",
+  "website": "https://cambridgeosteopathy.co.uk",
+  "town": "Cambridge",
+  "category": "Osteopathy",
+  "owner": "Bethany Garrett"
+ },
+ {
+  "name": "Cambridge Peaceful Pets",
+  "website": "https://cambridgepeacefulpets.com",
+  "town": "Cambridge",
+  "category": "Home visit veterinary service",
+  "owner": "Dr Edward Kingsbury"
+ },
+ {
+  "name": "Cambridge Photographers",
+  "website": "https://cambridgephotographers.co.uk",
+  "town": "Cambridge",
+  "category": "Photography",
+  "owner": "Jean-Luc Benazet"
+ },
+ {
+  "name": "Cambridge Pianoforte",
+  "website": "https://cambridgepianos.co.uk",
+  "town": "Cambridge",
+  "category": "Piano sales & tuning",
+  "owner": "Samantha Jane Howe"
+ },
+ {
+  "name": "Cambridge Property Lettings",
+  "website": "https://cambridgepropertylettings.co.uk",
+  "town": "Cambridge",
+  "category": "Letting agent",
+  "owner": "Gillian Sarah Hames"
+ },
+ {
+  "name": "Cambridge Punters",
+  "website": "https://cambridgepunters.com",
+  "town": "Cambridge",
+  "category": "Punting tours",
+  "owner": "Julian Peter Charles Fowler"
+ },
+ {
+  "name": "Cambridge Skin Clinic",
+  "website": "https://camskinclinic.com",
+  "town": "Cambridge",
+  "category": "Aesthetics clinic",
+  "owner": "Dr Li Li"
+ },
+ {
+  "name": "Cambridge Smile Studio",
+  "website": "https://dentalsurgerygroup.co.uk",
+  "town": "Cambridge",
+  "category": "Private dentist",
+  "owner": "Dr Bindi Shah"
+ },
+ {
+  "name": "Cambridge Wine Merchants",
+  "website": "https://cambridgewine.com",
+  "town": "Cambridge",
+  "category": "Wine merchant",
+  "owner": "Timothy Hal Quentin Wilson"
+ },
+ {
+  "name": "Carmelo Hair",
+  "website": "https://carmelohair.co.uk",
+  "town": "Cambridge",
+  "category": "Barber & hair",
+  "owner": "Carmelo De Masi"
+ },
+ {
+  "name": "Catherine Jones Jewellers",
+  "website": "https://catherinejones.com",
+  "town": "Cambridge",
+  "category": "Jeweller",
+  "owner": "Vanessa Burkitt"
+ },
+ {
+  "name": "Chardome",
+  "website": "https://chardome.co.uk",
+  "town": "Burwell",
+  "category": "Bespoke kitchens & furniture",
+  "owner": "Jonathan Chardome"
+ },
+ {
+  "name": "Cream Rose Huntingdon",
+  "website": "https://cream-rose.co.uk",
+  "town": "Cambridge",
+  "category": "Occasionwear boutique",
+  "owner": "Luanne Pauline Hill"
+ },
+ {
+  "name": "Crown Catering Cambridge",
+  "website": "https://crowncateringcambridge.com",
+  "town": "Newmarket",
+  "category": "Catering",
+  "owner": "Roger Hornett"
+ },
+ {
+  "name": "Cutting Edge Podiatry Cambridge",
+  "website": "https://cuttingedgepodiatry.co.uk",
+  "town": "Cambridge",
+  "category": "Podiatry",
+  "owner": "Suvanne Southgate"
+ },
+ {
+  "name": "Dr Ines Ribeiro",
+  "website": "https://drinesribeiro.com",
+  "town": "Histon",
+  "category": "Cosmetic dentist",
+  "owner": "Dr Ines Ribeiro"
+ },
+ {
+  "name": "Dye's Hair & Beauty",
+  "website": "https://dyeshairandbeauty.co.uk",
+  "town": "Cambridge",
+  "category": "Hair salon",
+  "owner": "Diane Cundell"
+ },
+ {
+  "name": "Eyes of Swavesey",
+  "website": "https://eyesofswavesey.co.uk",
+  "town": "Swavesey",
+  "category": "Optician",
+  "owner": "Emma Logan"
+ },
+ {
+  "name": "Fantasia (Scuseme)",
+  "website": "https://scuseme.co.uk",
+  "town": "Cambridge",
+  "category": "Lifestyle retail",
+  "owner": "Dawn Giesler"
+ },
+ {
+  "name": "Fen Ditton Gallery",
+  "website": "https://fendittongallery.com",
+  "town": "Fen Ditton",
+  "category": "Art gallery",
+  "owner": "Hannah Munby"
+ },
+ {
+  "name": "Fitzbillies",
+  "website": "https://fitzbillies.com",
+  "town": "Cambridge",
+  "category": "Bakery & cafe",
+  "owner": "Timothy Matthew Hayward"
+ },
+ {
+  "name": "Flowerverse",
+  "website": "https://flowerverse.co.uk",
+  "town": "Cambridge",
+  "category": "Florist",
+  "owner": "Natalia Golowicz"
+ },
+ {
+  "name": "Footprint Signs and Graphics",
+  "website": "https://footprintsignsandgraphics.com",
+  "town": "Cambridge",
+  "category": "Signage",
+  "owner": "Louise Anne Mccreery"
+ },
+ {
+  "name": "Gallery Above",
+  "website": "https://galleryabove.co.uk",
+  "town": "Linton",
+  "category": "Gallery & gifts (Linton)",
+  "owner": "Rosemary Wellings"
+ },
+ {
+  "name": "Gardner Denley",
+  "website": "https://gardnerdenley.com",
+  "town": "Cambridge",
+  "category": "Property buying agent",
+  "owner": "Simon Gardner"
+ },
+ {
+  "name": "Generations Dance Academy",
+  "website": "https://gda.dance",
+  "town": "Huntingdon",
+  "category": "Dance school",
+  "owner": "Wendy Burke"
+ },
+ {
+  "name": "getBEAUTY",
+  "website": "https://getbeauty.uk",
+  "town": "Milton",
+  "category": "Beauty salon",
+  "owner": "Ramona Ristea"
+ },
+ {
+  "name": "Goddens Home Interiors",
+  "website": "https://goddenshomeinteriors.co.uk",
+  "town": "Cambridge",
+  "category": "Shutters blinds flooring",
+  "owner": "Aaron Godden"
+ },
+ {
+  "name": "Goldstraw Goldsmiths",
+  "website": "https://goldstraw.co.uk",
+  "town": "St Neots",
+  "category": "Jeweller & goldsmith",
+  "owner": "Paul Goldstraw"
+ },
+ {
+  "name": "Hardwick Clinic",
+  "website": "https://hardwickclinic.co.uk",
+  "town": "St Neots",
+  "category": "Aesthetics clinic",
+  "owner": "Dr Tatyana Lapa-Enright"
+ },
+ {
+  "name": "Heath Fruit Farm",
+  "website": "https://heathfruitfarm.co.uk",
+  "town": "Bluntisham",
+  "category": "Fruit farm & farm shop",
+  "owner": "Robert Bousfield"
+ },
+ {
+  "name": "Histon Foot Care",
+  "website": "https://histonfootcare.co.uk",
+  "town": "Histon",
+  "category": "Podiatry",
+  "owner": "Andrew Goodwin"
+ },
+ {
+  "name": "Hurst Park Dental",
+  "website": "https://hurstparkdental.com",
+  "town": "Cambridge",
+  "category": "Private dentist",
+  "owner": "Max Leslie"
+ },
+ {
+  "name": "Katie Malik Design Studio",
+  "website": "https://katiemalik.co.uk",
+  "town": "Saffron Walden",
+  "category": "Interior design",
+  "owner": "Katie Malik"
+ },
+ {
+  "name": "KCS Kris Cleaning Services",
+  "website": "https://kcskriscleaningservices.co.uk",
+  "town": "Cambridge",
+  "category": "Cleaning services",
+  "owner": "Ivaylo Iliev Iliev"
+ },
+ {
+  "name": "Let's Go Punting",
+  "website": "https://letsgopunting.co.uk",
+  "town": "Cambridge",
+  "category": "Punting tours",
+  "owner": "Caroline Mary Robinson Godfrey"
+ },
+ {
+  "name": "Life on a Bike",
+  "website": "https://lifeonabikestore.co.uk",
+  "town": "Cambridge",
+  "category": "Bike shop & workshop",
+  "owner": "Jef Sharp"
+ },
+ {
+  "name": "Lighthouse Toys",
+  "website": "https://lighthousetoys.com",
+  "town": "Cambridge",
+  "category": "Toy shop",
+  "owner": "Timothy William Broad"
+ },
+ {
+  "name": "Madeleine Gooding Counselling",
+  "website": "https://counsellingwithmadeleine.co.uk",
+  "town": "Girton",
+  "category": "Counselling",
+  "owner": "Madeleine Gooding"
+ },
+ {
+  "name": "Maiorana Upholstery Cambridge",
+  "website": "https://maioranaupholstery.co.uk",
+  "town": "Trumpington",
+  "category": "Upholstery",
+  "owner": "Alessio Maiorana"
+ },
+ {
+  "name": "MB Hair Studio",
+  "website": "https://mb-hairstudio.co.uk",
+  "town": "Cambridge",
+  "category": "Hair salon",
+  "owner": "Mesut Can Polat"
+ },
+ {
+  "name": "Mensroom Cambridge",
+  "website": "https://mensroomcambridge.co.uk",
+  "town": "Cambridge",
+  "category": "Barber",
+  "owner": "Simon Swinton"
+ },
+ {
+  "name": "Midsummer House",
+  "website": "https://midsummerhouse.co.uk",
+  "town": "Cambridge",
+  "category": "Restaurant (2 Michelin stars)",
+  "owner": "Daniel Clifford"
+ },
+ {
+  "name": "MM Wealth",
+  "website": "https://mmwealth.co.uk",
+  "town": "Girton",
+  "category": "Financial planning",
+  "owner": "Adrian Francis John Atkinson"
+ },
+ {
+  "name": "Morgans Butchery",
+  "website": "https://morgansbutchery.co.uk",
+  "town": "Cambridge",
+  "category": "Butcher",
+  "owner": "Amy Nicholas"
+ },
+ {
+  "name": "Move Free Chiropractic",
+  "website": "https://movefreechiropractic.co.uk",
+  "town": "Cambridge",
+  "category": "Chiropractic clinic",
+  "owner": "Dr Kyle Wingate"
+ },
+ {
+  "name": "New Dawn Blinds",
+  "website": "https://newdawnblinds.co.uk",
+  "town": "Royston",
+  "category": "Blinds & shutters",
+  "owner": "Steven John Griffiths"
+ },
+ {
+  "name": "Nicholas Hythe Kitchen Design",
+  "website": "https://nhkitchendesign.com",
+  "town": "Ely",
+  "category": "Kitchen design",
+  "owner": "Ross Halliday"
+ },
+ {
+  "name": "Off Grid Design",
+  "website": "https://offgriddesign.co.uk",
+  "town": "Ely",
+  "category": "Design & branding studio",
+  "owner": "Jeremy Brook"
+ },
+ {
+  "name": "PhysioTeq",
+  "website": "https://physioteq.co.uk",
+  "town": "Cambridge",
+  "category": "Physiotherapy",
+  "owner": "Lorraine Quantrell"
+ },
+ {
+  "name": "Pilatesfit Cambridge",
+  "website": "https://pilatesfitcambridge.co.uk",
+  "town": "Cambridge",
+  "category": "Pilates & physio",
+  "owner": "Rowan Bailey"
+ },
+ {
+  "name": "Planning House Cambridge",
+  "website": "https://planninghouse.co.uk",
+  "town": "Cambridge",
+  "category": "Town planning",
+  "owner": "Chris Pipe"
+ },
+ {
+  "name": "Quest Brothers Classic Cars",
+  "website": "https://questbrothersclassiccars.com",
+  "town": "St Ives",
+  "category": "Classic car restoration",
+  "owner": "Ian Anthony Quest"
+ },
+ {
+  "name": "Red Monster Print Cambridge",
+  "website": "https://redmonsterprint.co.uk",
+  "town": "Sawston",
+  "category": "Large format printing",
+  "owner": "Lorraine Allison Brown"
+ },
+ {
+  "name": "Reform Fit",
+  "website": "https://reform-fit.co.uk",
+  "town": "Saffron Walden",
+  "category": "Pilates & yoga studio",
+  "owner": "Luke Nicholas Bowman"
+ },
+ {
+  "name": "Regency Autos",
+  "website": "https://regency-autos.co.uk",
+  "town": "Cambridge",
+  "category": "Car garage",
+  "owner": "Mary Elizabeth Deegan"
+ },
+ {
+  "name": "Regency Funeral Directors",
+  "website": "https://regencyfuneraldirectors.co.uk",
+  "town": "Huntingdon",
+  "category": "Funeral directors",
+  "owner": "Anthony Jones"
+ },
+ {
+  "name": "Revive Massage Therapy",
+  "website": "https://revivemassagecambourne.co.uk",
+  "town": "Cambourne",
+  "category": "Massage",
+  "owner": "Aneta Plutowska"
+ },
+ {
+  "name": "Rias Interiors Cambridge",
+  "website": "https://riasinteriors.co.uk",
+  "town": "Cambridge",
+  "category": "Curtains blinds shutters",
+  "owner": "Paul Wise"
+ },
+ {
+  "name": "Rulos Barbers",
+  "website": "https://rulos.co.uk",
+  "town": "Cambridge",
+  "category": "Barber",
+  "owner": "Giovanni Favarulo"
+ },
+ {
+  "name": "Rutherford's Punting",
+  "website": "https://rutherfordspunting.com",
+  "town": "Cambridge",
+  "category": "Punting tours",
+  "owner": "James Rutherford"
+ },
+ {
+  "name": "S L Proctor Upholstery",
+  "website": "https://sproctor.co.uk",
+  "town": "Cambridge",
+  "category": "Upholstery",
+  "owner": "Shaun Proctor"
+ },
+ {
+  "name": "Sage Blinds",
+  "website": "https://sageblinds.co.uk",
+  "town": "Melbourn",
+  "category": "Blinds & shutters",
+  "owner": "Martin Sorrell"
+ },
+ {
+  "name": "Salus Wellness",
+  "website": "https://salus-wellness.com",
+  "town": "Cambridge",
+  "category": "Wellness clinic",
+  "owner": "Massimo Gaetani"
+ },
+ {
+  "name": "Sarah Key Books, The Haunted Bookshop",
+  "website": "https://sarahkeybooks.co.uk",
+  "town": "Cambridge",
+  "category": "Antiquarian bookshop",
+  "owner": "Sarah Key"
+ },
+ {
+  "name": "Scholars Punting Cambridge",
+  "website": "https://scholarspuntingcambridge.co.uk",
+  "town": "Cambridge",
+  "category": "Punting tours",
+  "owner": "Ashley Mark Dalton"
+ },
+ {
+  "name": "Scruffs",
+  "website": "https://scruffs.co.uk",
+  "town": "Cambridge",
+  "category": "Hair salon",
+  "owner": "Garry Chapman"
+ },
+ {
+  "name": "Scudamore's Punting",
+  "website": "https://scudamores.com",
+  "town": "Cambridge",
+  "category": "Punting tours",
+  "owner": "Roderick Ian Ingersent"
+ },
+ {
+  "name": "Soho Fine Art Cambridge",
+  "website": "https://sohofineart.co.uk",
+  "town": "Cambridge",
+  "category": "Art gallery",
+  "owner": "Jackie Ritsema"
+ },
+ {
+  "name": "Sunrise Blinds",
+  "website": "https://sunriseblinds.co.uk",
+  "town": "Newmarket",
+  "category": "Blinds & awnings",
+  "owner": "Alan Charles Gurner"
+ },
+ {
+  "name": "Sylvia Newman Garden Design",
+  "website": "https://sngardendesign.co.uk",
+  "town": "Over",
+  "category": "Garden design",
+  "owner": "Edward John Newman"
+ },
+ {
+  "name": "Tattoo Crazy Cambridge",
+  "website": "https://tattoocrazy.co.uk",
+  "town": "Cambridge",
+  "category": "Tattoo studio",
+  "owner": "Barry Butt"
+ },
+ {
+  "name": "Tekmotiv",
+  "website": "https://tekmotiv.co.uk",
+  "town": "Saffron Walden",
+  "category": "Electric bike shop",
+  "owner": "James Hedley Dobson"
+ },
+ {
+  "name": "Teversham Motors",
+  "website": "https://tevershammotors.co.uk",
+  "town": "Cambridge",
+  "category": "Garage & MOT centre",
+  "owner": "Simon James Martin"
+ },
+ {
+  "name": "The Barbers Cambridge",
+  "website": "https://thebarberscambridge.co.uk",
+  "town": "Cambridge",
+  "category": "Barber",
+  "owner": "Louise Mary Traynier"
+ },
+ {
+  "name": "The Bespoke Tailor Cambridge",
+  "website": "https://thebespoketailor.co.uk",
+  "town": "Cambridge",
+  "category": "Tailor",
+  "owner": "Adrian Barrows"
+ },
+ {
+  "name": "The Cambridge Centre for Languages",
+  "website": "https://camlang.co.uk",
+  "town": "Cambridge",
+  "category": "Language school",
+  "owner": "Arin Bayraktaroglu"
+ },
+ {
+  "name": "The Cambridge Sign Company",
+  "website": "https://cambridgesigncompany.co.uk",
+  "town": "St Ives",
+  "category": "Sign maker & vehicle graphics",
+  "owner": "Nicholas Charles Robert Dowell-McGrillan"
+ },
+ {
+  "name": "The Free Press Cambridge",
+  "website": "https://freepresscambridge.com",
+  "town": "Cambridge",
+  "category": "Pub",
+  "owner": "Megan Stepney"
+ },
+ {
+  "name": "The Highfield Event Group",
+  "website": "https://highfieldeventgroup.com",
+  "town": "Burwell",
+  "category": "Marquee & event hire",
+  "owner": "Claire Louise Rigarlsford"
+ },
+ {
+  "name": "Tim Jennings Garden Design",
+  "website": "https://timjenningsdesign.co.uk",
+  "town": "Lode",
+  "category": "Garden design",
+  "owner": "Tim Jennings"
+ },
+ {
+  "name": "Total Health Clinics",
+  "website": "https://totalhealthclinics.com",
+  "town": "Cambridge",
+  "category": "Physiotherapy",
+  "owner": "Ben Barker"
+ },
+ {
+  "name": "Traditional Restorations",
+  "website": "https://traditionalrestorationscambridge.co.uk",
+  "town": "Sawston",
+  "category": "Furniture restoration",
+  "owner": "Jon Porter"
+ },
+ {
+  "name": "W&P Blinds Cambridge",
+  "website": "https://wandpblinds.co.uk",
+  "town": "Cambridge",
+  "category": "Blinds & curtains",
+  "owner": "Hazel Joy White"
+ },
+ {
+  "name": "Willow Grange Farm Shop",
+  "website": "https://willowgrangefarm.co.uk",
+  "town": "Ely",
+  "category": "Farm shop & cafe",
+  "owner": "Clara Campbell-Beavis"
+ }
+]

@@ -1,0 +1,2795 @@
+[
+ {
+  "dom": "agodrive.co.uk",
+  "biz": "Ago Drive Driving School",
+  "cat": "Driving school",
+  "owners": [
+   "Adrian David Rix"
+  ],
+  "role": "Director",
+  "ch": "07666492",
+  "inc": "13 June 2011",
+  "costat": "Active",
+  "sic": [
+   "85530 - Driving school activities"
+  ],
+  "phones": [
+   "07966 707161"
+  ],
+  "emails": [
+   "adrianagodrive@hotmail.co.uk"
+  ],
+  "postcode": "CB25 0AA",
+  "addr": "49 Ness Road Burwell Cambridge, CB25 0AA",
+  "social": {},
+  "founded": "",
+  "copyright": "2026",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Burwell"
+ },
+ {
+  "dom": "alexandergreens.co.uk",
+  "biz": "Alexander Greens Cambridge",
+  "cat": "Restaurant",
+  "owners": [
+   "Jonathan Wright"
+  ],
+  "role": "Director",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 224480"
+  ],
+  "emails": [
+   "info@alexandergreens.co.uk"
+  ],
+  "postcode": "CB22 3JH",
+  "addr": "Cambridge Business Park, Babraham Road, Sawston, Cambridge, CB22 3JH",
+  "social": {
+   "instagram": "alexandergreenscambs",
+   "facebook": "agcambs",
+   "linkedin": "alexander-greens"
+  },
+  "founded": "2010",
+  "copyright": "",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Sawston"
+ },
+ {
+  "dom": "all-eyes.co.uk",
+  "biz": "All Eyes Spectacle Makers",
+  "cat": "Optician",
+  "owners": [
+   "Jeremy Paul Izard"
+  ],
+  "role": "Director",
+  "ch": "05099306",
+  "inc": "8 April 2004",
+  "costat": "Active",
+  "sic": [
+   "47749 - Retail sale of medical and orthopaedic goods in specialised stores (not incl. hearing aids) not elsewhere classified",
+   "99999 - Dormant Company"
+  ],
+  "phones": [
+   "01954 231545"
+  ],
+  "emails": [
+   "sales@all-eyes.co.uk"
+  ],
+  "postcode": "CB24 5QE",
+  "addr": "Way Industrial Est, Over, Cambridge, CB24 5QE",
+  "social": {
+   "instagram": "alleyescambridge",
+   "facebook": "ALLEYESSPECSMAKERS"
+  },
+  "founded": "1987",
+  "copyright": "2019",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Over"
+ },
+ {
+  "dom": "aminmartialarts.com",
+  "biz": "Amin Martial Arts Cambridge",
+  "cat": "Martial arts",
+  "owners": [
+   "Anayah Abulhoul",
+   "Amin Sharifi"
+  ],
+  "role": "Director",
+  "ch": "14684975",
+  "inc": "23 February 2023",
+  "costat": "Active",
+  "sic": [
+   "85510 - Sports and recreation education",
+   "93199 - Other sports activities"
+  ],
+  "phones": [
+   "07534 370055"
+  ],
+  "emails": [
+   "info@aminmartialarts.com"
+  ],
+  "postcode": "CB4 1TG",
+  "addr": "CB4 1TG",
+  "social": {
+   "instagram": "ama.cambridge"
+  },
+  "founded": "1990",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "barkerbrosbutchers.co.uk",
+  "biz": "Barker Bros Butchers",
+  "cat": "Butcher",
+  "owners": [
+   "David Barker",
+   "Katherine Barker",
+   "Stuart Barker"
+  ],
+  "role": "Director",
+  "ch": "07702780",
+  "inc": "13 July 2011",
+  "costat": "Active",
+  "sic": [
+   "47220 - Retail sale of meat and meat products in specialised stores"
+  ],
+  "phones": [
+   "01223 843292"
+  ],
+  "emails": [
+   "info@barkerbrosbutchers.co.uk"
+  ],
+  "postcode": "CB22 5EH",
+  "addr": "43 High Street, Great Shelford, Cambridge, CB22 5EH",
+  "social": {
+   "instagram": "barkerbrosbutchers",
+   "facebook": "BarkerBrosButchers",
+   "x": "BarkersButchers"
+  },
+  "founded": "",
+  "copyright": "2021",
+  "platform": "Squarespace",
+  "booking": [
+   "OpenTable"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Great Shelford"
+ },
+ {
+  "dom": "barnwellbarbers.co.uk",
+  "biz": "Barnwell Barbers",
+  "cat": "Barber",
+  "owners": [
+   "Paul McGeorge"
+  ],
+  "role": "Director",
+  "ch": "07317186",
+  "inc": "16 July 2010",
+  "costat": "Active",
+  "sic": [
+   "96020 - Hairdressing and other beauty treatment"
+  ],
+  "phones": [
+   "01223 241964"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "boxedevents.co.uk",
+  "biz": "Boxed Events",
+  "cat": "Catering & events",
+  "owners": [
+   "James Knight"
+  ],
+  "role": "Director",
+  "ch": "09733842",
+  "inc": "14 August 2015",
+  "costat": "Active",
+  "sic": [
+   "56210 - Event catering activities"
+  ],
+  "phones": [
+   "01223 779942"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "budsfitness.co.uk",
+  "biz": "Buds Fitness",
+  "cat": "Fitness coaching",
+  "owners": [
+   "Abigail Baker",
+   "Liam Jonathon Baker"
+  ],
+  "role": "Director",
+  "ch": "14450209",
+  "inc": "28 October 2022",
+  "costat": "Active",
+  "sic": [
+   "93120 - Activities of sport clubs",
+   "93199 - Other sports activities"
+  ],
+  "phones": [
+   "07376 714342"
+  ],
+  "emails": [
+   "info@budsfitness.co.uk",
+   "support@kaluna.co.uk"
+  ],
+  "postcode": "PE28 5ST",
+  "addr": "4, Greystones, The Green, Sawtry, Cambridgeshire, PE28 5ST",
+  "social": {
+   "instagram": "buds.fitness",
+   "facebook": "profile.php",
+   "linkedin": "buds-fitness-limited"
+  },
+  "founded": "",
+  "copyright": "2026",
+  "platform": "WooCommerce",
+  "booking": [
+   "Calendly"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Sawtry"
+ },
+ {
+  "dom": "burrbridal.co.uk",
+  "biz": "Burr Bridal",
+  "cat": "Bridal boutique",
+  "owners": [
+   "Kim Burr"
+  ],
+  "role": "Founder & owner",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 323230"
+  ],
+  "emails": [
+   "info@burrbridal.co.uk"
+  ],
+  "postcode": "CB1 1LN",
+  "addr": "Street, Cambridge, CB1 1LN",
+  "social": {
+   "instagram": "burrbridal",
+   "facebook": "burrbridalltd"
+  },
+  "founded": "",
+  "copyright": "2026",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "bushandco.co.uk",
+  "biz": "Bush & Co",
+  "cat": "Estate agent",
+  "owners": [
+   "Andrew Bush"
+  ],
+  "role": "Founder, 1996",
+  "ch": "04389844",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 246262",
+   "01223 508085",
+   "01223 375925"
+  ],
+  "emails": [
+   "abush@bushandco.co.uk",
+   "apreston@bushandco.co.uk",
+   "bhall@bushandco.co.uk",
+   "ccurrington@bushandco.co.uk"
+  ],
+  "postcode": "CB1 3AH",
+  "addr": "CB1 3AH",
+  "social": {
+   "instagram": "bushestateagents",
+   "facebook": "bushestateagents",
+   "linkedin": "bush-co-estate-agents"
+  },
+  "founded": "1996",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "camosteopathy.co.uk",
+  "biz": "Cam Osteopathy",
+  "cat": "Osteopathy",
+  "owners": [
+   "Ian Lewis"
+  ],
+  "role": "Director",
+  "ch": "10260219",
+  "inc": "4 July 2016",
+  "costat": "Active",
+  "sic": [
+   "86900 - Other human health activities"
+  ],
+  "phones": [
+   "07982 432732"
+  ],
+  "emails": [
+   "info@camosteopathy.co.uk"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgepodiatry.co.uk",
+  "biz": "Cambridge Chiropody and Podiatry",
+  "cat": "Podiatry",
+  "owners": [
+   "Gary Roger Hinton",
+   "Jennifer Ann Hinton"
+  ],
+  "role": "Director",
+  "ch": "05822268",
+  "inc": "19 May 2006",
+  "costat": "Active",
+  "sic": [
+   "86900 - Other human health activities"
+  ],
+  "phones": [
+   "01223 322636"
+  ],
+  "emails": [
+   "info@cambridgepodiatry.co.uk"
+  ],
+  "postcode": "CB4 1PH",
+  "addr": "11 Cook Close, Cambridge, CB4 1PH",
+  "social": {},
+  "founded": "",
+  "copyright": "2011",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": false,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgeclocks.com",
+  "biz": "Cambridge Clocks",
+  "cat": "Clock repair",
+  "owners": [
+   "Thomas Jackson"
+  ],
+  "role": "Director",
+  "ch": "10415262",
+  "inc": "7 October 2016",
+  "costat": "Active",
+  "sic": [
+   "33190 - Repair of other equipment"
+  ],
+  "phones": [
+   "07510 954040"
+  ],
+  "emails": [
+   "enquiries@cambridgeclocks.com"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "facebook": "2008"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "Squarespace",
+  "booking": [
+   "OpenTable"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgecounsellingservice.co.uk",
+  "biz": "Cambridge Counselling Service",
+  "cat": "Counselling",
+  "owners": [
+   "Erica Briscoe",
+   "Elizabeth Claire Chapman",
+   "Mark Gawlinski"
+  ],
+  "role": "Director",
+  "ch": "10920623",
+  "inc": "17 August 2017",
+  "costat": "Active",
+  "sic": [
+   "86900 - Other human health activities"
+  ],
+  "phones": [
+   "01223 261061"
+  ],
+  "emails": [],
+  "postcode": "CB5 8HY",
+  "addr": "20 Mercers Row Cambridge, CB5 8HY",
+  "social": {},
+  "founded": "2009",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgecraftedkitchens.co.uk",
+  "biz": "Cambridge Crafted Kitchens",
+  "cat": "Kitchen design",
+  "owners": [
+   "Dylan Wade-Gledhill",
+   "Sarah Wade-Gledhill"
+  ],
+  "role": "Directors",
+  "ch": "10669371",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 904150"
+  ],
+  "emails": [
+   "info@cambridgecraftedkitchens.co.uk"
+  ],
+  "postcode": "CB25 9HA",
+  "addr": "Farm, Long Meadow Lode, Cambridgeshire, CB25 9HA",
+  "social": {
+   "x": "convertbox"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Lode"
+ },
+ {
+  "dom": "cambridge.dental",
+  "biz": "Cambridge Dental",
+  "cat": "Private dentist",
+  "owners": [
+   "Dr Geeta Bellis"
+  ],
+  "role": "Lead dentist",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 461381"
+  ],
+  "emails": [],
+  "postcode": "CB3 9EY",
+  "addr": "39 Newnham Road Cambridge, CB3 9EY",
+  "social": {
+   "instagram": "cambridgedentaluk",
+   "facebook": "cambridgedentaluk",
+   "linkedin": "cambridgedentaluk"
+  },
+  "founded": "",
+  "copyright": "2024",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgehearingandbalance.co.uk",
+  "biz": "Cambridge Hearing and Balance",
+  "cat": "Audiology",
+  "owners": [
+   "Patrick Axon",
+   "Matthew Edward Smith",
+   "James Tysome"
+  ],
+  "role": "Director",
+  "ch": "OC381582",
+  "inc": "14 January 2013",
+  "costat": "Active",
+  "sic": [],
+  "phones": [
+   "01223 911288",
+   "01223 266990",
+   "01223 370922"
+  ],
+  "emails": [
+   "info@cambridgehearingandbalance.co.uk"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "2011",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgeosteopaths.com",
+  "biz": "Cambridge Osteopaths",
+  "cat": "Osteopathy",
+  "owners": [
+   "Alexander Taylor"
+  ],
+  "role": "Proprietor",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 841541"
+  ],
+  "emails": [
+   "reception@cambridgeosteopaths.com"
+  ],
+  "postcode": "CB2 1NT",
+  "addr": "41 Hills Road, Cambridge, CB2 1NT",
+  "social": {
+   "facebook": "haverhillosteopaths"
+  },
+  "founded": "2001",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgephotographers.co.uk",
+  "biz": "Cambridge Photographers",
+  "cat": "Photography",
+  "owners": [
+   "Jean-Luc Benazet"
+  ],
+  "role": "Director",
+  "ch": "09040225",
+  "inc": "14 May 2014",
+  "costat": "Active",
+  "sic": [
+   "74209 - Photographic activities not elsewhere classified"
+  ],
+  "phones": [
+   "01223 927055"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgepropertylettings.co.uk",
+  "biz": "Cambridge Property Lettings",
+  "cat": "Letting agent",
+  "owners": [
+   "Gillian Sarah Hames",
+   "Trevor Anthony Hames",
+   "Jeremy Nathan Liming"
+  ],
+  "role": "Director",
+  "ch": "05833061",
+  "inc": "31 May 2006",
+  "costat": "Active",
+  "sic": [
+   "68320 - Management of real estate on a fee or contract basis"
+  ],
+  "phones": [
+   "01223 322277"
+  ],
+  "emails": [],
+  "postcode": "CB4 2AN",
+  "addr": "CB4 2AN",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgepunters.com",
+  "biz": "Cambridge Punters",
+  "cat": "Punting tours",
+  "owners": [
+   "Julian Peter Charles Fowler",
+   "Thomas Hendrik Edward Lohman-o'donovan"
+  ],
+  "role": "Director",
+  "ch": "10610846",
+  "inc": "9 February 2017",
+  "costat": "Active",
+  "sic": [
+   "50300 - Inland passenger water transport"
+  ],
+  "phones": [
+   "07807 718592"
+  ],
+  "emails": [
+   "info@cambridgepunters.com"
+  ],
+  "postcode": "CB5 8AB",
+  "addr": "Cambridge Punters, Quayside, Bridge Street, Cambridge, CB5 8AB",
+  "social": {
+   "instagram": "explore",
+   "facebook": "CambridgePunters",
+   "x": "CamPunters"
+  },
+  "founded": "2007",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "camskinclinic.com",
+  "biz": "Cambridge Skin Clinic",
+  "cat": "Aesthetics clinic",
+  "owners": [
+   "Dr Li Li"
+  ],
+  "role": "Director",
+  "ch": "15998105",
+  "inc": "4 October 2024",
+  "costat": "Active",
+  "sic": [
+   "86900 - Other human health activities",
+   "96020 - Hairdressing and other beauty treatment"
+  ],
+  "phones": [
+   "01223 631060"
+  ],
+  "emails": [
+   "info@camskinclinic.com"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "dentalsurgerygroup.co.uk",
+  "biz": "Cambridge Smile Studio",
+  "cat": "Private dentist",
+  "owners": [
+   "Dr Bindi Shah",
+   "Dipen Shah"
+  ],
+  "role": "Principal dentist; director",
+  "ch": "06408338",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01462 742353",
+   "01223 778141",
+   "01223 843567"
+  ],
+  "emails": [
+   "info@ashwelldental.com",
+   "info@cambridgesmilestudio.co.uk",
+   "info@dentalsurgerygroup.co.uk",
+   "info@greatshelforddental.com"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "dentalsurgerygroup"
+  },
+  "founded": "2004",
+  "copyright": "2024",
+  "platform": "Webflow",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "cambridgewine.com",
+  "biz": "Cambridge Wine Merchants",
+  "cat": "Wine merchant",
+  "owners": [
+   "Timothy Hal Quentin Wilson"
+  ],
+  "role": "Director",
+  "ch": "02793727",
+  "inc": "25 February 1993",
+  "costat": "Active",
+  "sic": [
+   "46342 - Wholesale of wine, beer, spirits and other alcoholic beverages",
+   "47250 - Retail sale of beverages in specialised stores"
+  ],
+  "phones": [
+   "01223 568989",
+   "01223 309311",
+   "01223 214553"
+  ],
+  "emails": [
+   "bridge@cambridgewine.com",
+   "cherry@cambridgewine.com",
+   "kings@cambridgewine.com"
+  ],
+  "postcode": "CB2 1UJ",
+  "addr": "31/32 Bridge Street Cambridge, CB2 1UJ",
+  "social": {
+   "instagram": "cambridge_wine",
+   "facebook": "cambridgewinemerchants",
+   "x": "cambridgewine"
+  },
+  "founded": "1993",
+  "copyright": "2025",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "carmelohair.co.uk",
+  "biz": "Carmelo Hair",
+  "cat": "Barber & hair",
+  "owners": [
+   "Carmelo De Masi",
+   "Patricia De Masi"
+  ],
+  "role": "Directors",
+  "ch": "08073933",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 311806"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "catherinejones.com",
+  "biz": "Catherine Jones Jewellers",
+  "cat": "Jeweller",
+  "owners": [
+   "Vanessa Burkitt"
+  ],
+  "role": "Director",
+  "ch": "03985266",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 361596"
+  ],
+  "emails": [
+   "online@catherinejones.com"
+  ],
+  "postcode": "CB2 1UA",
+  "addr": "Cambridge 9 Bridge Street Cambridge, CB2 1UA",
+  "social": {
+   "instagram": "catherine_jones_of_cambridge",
+   "facebook": "CatherineJonesOfCambridge",
+   "x": "CJ_of_Cambridge"
+  },
+  "founded": "1963",
+  "copyright": "",
+  "platform": "Shopify",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "chardome.co.uk",
+  "biz": "Chardome",
+  "cat": "Bespoke kitchens & furniture",
+  "owners": [
+   "Jonathan Chardome",
+   "Valentin Chardome",
+   "Edward Richard John Sandford"
+  ],
+  "role": "Director",
+  "ch": "12527724",
+  "inc": "20 March 2020",
+  "costat": "Active",
+  "sic": [
+   "16230 - Manufacture of other builders' carpentry and joinery"
+  ],
+  "phones": [
+   "01223 953356",
+   "01223 651056"
+  ],
+  "emails": [
+   "enquiries@chardome.co.uk"
+  ],
+  "postcode": "CB25 0GH",
+  "addr": "25, Meadow View Industrial Estate, Reach Rd, Burwell, Cambridge, CB25 0GH",
+  "social": {
+   "instagram": "chardome.kitchens.furniture",
+   "facebook": "chardomebespokefurniture"
+  },
+  "founded": "2016",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Burwell"
+ },
+ {
+  "dom": "cream-rose.co.uk",
+  "biz": "Cream Rose Huntingdon",
+  "cat": "Occasionwear boutique",
+  "owners": [
+   "Luanne Pauline Hill",
+   "Tania Jane Shields"
+  ],
+  "role": "Director",
+  "ch": "08664553",
+  "inc": "27 August 2013",
+  "costat": "Active",
+  "sic": [
+   "47710 - Retail sale of clothing in specialised stores"
+  ],
+  "phones": [
+   "01480 461187"
+  ],
+  "emails": [
+   "info@cream-rose.co.uk"
+  ],
+  "postcode": "PE28 9LQ",
+  "addr": "0783 5763 226 | 7 High Street, Fenstanton, Cambs, PE28 9LQ",
+  "social": {
+   "instagram": "creamrosecamb",
+   "facebook": "creamrosecamb"
+  },
+  "founded": "",
+  "copyright": "2026",
+  "platform": "Shopify",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "crowncateringcambridge.com",
+  "biz": "Crown Catering Cambridge",
+  "cat": "Catering",
+  "owners": [
+   "Roger Hornett"
+  ],
+  "role": "Chairman & Chief Executive",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01638 507702"
+  ],
+  "emails": [],
+  "postcode": "CB8 9UJ",
+  "addr": "1 Stetchworth Road Dullingham Newmarket Suffolk, CB8 9UJ",
+  "social": {
+   "instagram": "cccambridge",
+   "facebook": "Crowncateringcambridge"
+  },
+  "founded": "2007",
+  "copyright": "2025",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Newmarket"
+ },
+ {
+  "dom": "cuttingedgepodiatry.co.uk",
+  "biz": "Cutting Edge Podiatry Cambridge",
+  "cat": "Podiatry",
+  "owners": [
+   "Suvanne Southgate"
+  ],
+  "role": "Principal Podiatrist",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 633038"
+  ],
+  "emails": [
+   "contact@cuttingedgepodiatry.co.uk",
+   "info@lifelinefirstaideducation.com"
+  ],
+  "postcode": "CB5 8SL",
+  "addr": "255 Barnwell Road Cambridge, CB5 8SL",
+  "social": {
+   "instagram": "cutting_edge_podiatry",
+   "facebook": "cuttingedgepodiatryltd",
+   "linkedin": "cutting-edge-podiatry-cambridge",
+   "x": "cepodiatry"
+  },
+  "founded": "2009",
+  "copyright": "2015",
+  "platform": "Shopify",
+  "booking": [
+   "Calendly"
+  ],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "drinesribeiro.com",
+  "biz": "Dr Ines Ribeiro",
+  "cat": "Cosmetic dentist",
+  "owners": [
+   "Dr Ines Ribeiro"
+  ],
+  "role": "Owner",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07874 052468",
+   "01223 236799",
+   "01223 811844"
+  ],
+  "emails": [
+   "ortho@chapel.com",
+   "orthoinesribeiro@gmail.com"
+  ],
+  "postcode": "CB24 9LF",
+  "addr": "66 Station Road, Histon Cambridge, CB24 9LF",
+  "social": {
+   "instagram": "7ines7"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Histon"
+ },
+ {
+  "dom": "dyeshairandbeauty.co.uk",
+  "biz": "Dye's Hair & Beauty",
+  "cat": "Hair salon",
+  "owners": [
+   "Diane Cundell"
+  ],
+  "role": "Founder, 1998",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 302080"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "eyesofswavesey.co.uk",
+  "biz": "Eyes of Swavesey",
+  "cat": "Optician",
+  "owners": [
+   "Emma Logan"
+  ],
+  "role": "Director & Senior Optometrist",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01954 231158"
+  ],
+  "emails": [
+   "info@eyesofswavesey.co.uk"
+  ],
+  "postcode": "CB24 4UG",
+  "addr": "Rowles Way, Buckingway Business Park, Swavesey, Cambridgeshire, CB24 4UG",
+  "social": {
+   "instagram": "eyes_of_swavesey",
+   "facebook": "sighthealth",
+   "linkedin": "eyes-of-swavesey-opticians"
+  },
+  "founded": "1994",
+  "copyright": "2025",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Swavesey"
+ },
+ {
+  "dom": "scuseme.co.uk",
+  "biz": "Fantasia (Scuseme)",
+  "cat": "Lifestyle retail",
+  "owners": [
+   "Dawn Giesler"
+  ],
+  "role": "Founder",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07496 503954",
+   "01223 520373"
+  ],
+  "emails": [
+   "georgina.sells@contact-the-elderly.org.uk",
+   "help@scuseme.co.uk"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "scuseme.cambridge",
+   "facebook": "SCUSEMECambs",
+   "linkedin": "scuseme-limited",
+   "x": "scusemecambs"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "fendittongallery.com",
+  "biz": "Fen Ditton Gallery",
+  "cat": "Art gallery",
+  "owners": [
+   "Hannah Munby",
+   "Lotte Attwood"
+  ],
+  "role": "Owners, mother and daughter",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 295657"
+  ],
+  "emails": [
+   "info@fendittongallery.com"
+  ],
+  "postcode": "CB5 8ST",
+  "addr": "23 High Street, Fen Ditton, Cambridge, CB5 8ST",
+  "social": {
+   "instagram": "fendittongallery",
+   "facebook": "fendittongallery"
+  },
+  "founded": "",
+  "copyright": "2019",
+  "platform": "Squarespace",
+  "booking": [
+   "OpenTable"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Fen Ditton"
+ },
+ {
+  "dom": "fitzbillies.com",
+  "biz": "Fitzbillies",
+  "cat": "Bakery & cafe",
+  "owners": [
+   "Timothy Matthew Hayward",
+   "Alison Elizabeth Graeme Wright"
+  ],
+  "role": "Director",
+  "ch": "07596472",
+  "inc": "7 April 2011",
+  "costat": "Active",
+  "sic": [
+   "47110 - Retail sale in non-specialised stores with food, beverages or tobacco predominating",
+   "56101 - Licensed restaurants"
+  ],
+  "phones": [
+   "01223 211150"
+  ],
+  "emails": [
+   "orders@fitzbillies.com"
+  ],
+  "postcode": "CB1 7EB",
+  "addr": "31b Clifton Road, Cambridge, CB1 7EB",
+  "social": {
+   "instagram": "fitzbillies",
+   "facebook": "fitzbillies"
+  },
+  "founded": "1920",
+  "copyright": "2026",
+  "platform": "Shopify",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "flowerverse.co.uk",
+  "biz": "Flowerverse",
+  "cat": "Florist",
+  "owners": [
+   "Natalia Golowicz"
+  ],
+  "role": "Founder",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 655170"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "flowerverseuk",
+   "facebook": "2008"
+  },
+  "founded": "",
+  "copyright": "2025",
+  "platform": "Squarespace",
+  "booking": [
+   "OpenTable"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "footprintsignsandgraphics.com",
+  "biz": "Footprint Signs and Graphics",
+  "cat": "Signage",
+  "owners": [
+   "Louise Anne Mccreery",
+   "Stuart Mccreery",
+   "Nigel Wood"
+  ],
+  "role": "Director",
+  "ch": "06583139",
+  "inc": "2 May 2008",
+  "costat": "Active",
+  "sic": [
+   "73110 - Advertising agencies"
+  ],
+  "phones": [
+   "01223 608082"
+  ],
+  "emails": [
+   "info@footprintsigns.co.uk"
+  ],
+  "postcode": "CB1 7EF",
+  "addr": "Unit 55 Clifton Road, Cambridge, CB1 7EF",
+  "social": {
+   "instagram": "footprint.sg",
+   "facebook": "Footprint.SG"
+  },
+  "founded": "1990",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "galleryabove.co.uk",
+  "biz": "Gallery Above",
+  "cat": "Gallery & gifts (Linton)",
+  "owners": [
+   "Rosemary Wellings"
+  ],
+  "role": "Owner",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 894899"
+  ],
+  "emails": [
+   "info@gallery",
+   "info@galleryabove.co.uk"
+  ],
+  "postcode": "CB21 4JT",
+  "addr": "94 High Street, Linton, Cambridge, CB21 4JT",
+  "social": {
+   "instagram": "galleryabove",
+   "facebook": "GalleryAbove"
+  },
+  "founded": "",
+  "copyright": "2022",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Linton"
+ },
+ {
+  "dom": "gardnerdenley.com",
+  "biz": "Gardner Denley",
+  "cat": "Property buying agent",
+  "owners": [
+   "Simon Gardner",
+   "Dr Sarah Denley"
+  ],
+  "role": "Directors",
+  "ch": "11912462",
+  "inc": "28 March 2019",
+  "costat": "Active",
+  "sic": [
+   "68310 - Real estate agencies"
+  ],
+  "phones": [
+   "07710 809224"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "getbeauty.uk",
+  "biz": "getBEAUTY",
+  "cat": "Beauty salon",
+  "owners": [
+   "Ramona Ristea"
+  ],
+  "role": "Founder",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07758 144991",
+   "07455 592358"
+  ],
+  "emails": [
+   "contact@getbeauty.uk"
+  ],
+  "postcode": "CB4 1UY",
+  "addr": "5 Milton Rd, Cambridge, CB4 1UY",
+  "social": {
+   "instagram": "getbeautybyramonaristea",
+   "facebook": "browsandcosmeticscambridge"
+  },
+  "founded": "",
+  "copyright": "2025",
+  "platform": "WordPress",
+  "booking": [
+   "Booksy"
+  ],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Milton"
+ },
+ {
+  "dom": "goddenshomeinteriors.co.uk",
+  "biz": "Goddens Home Interiors",
+  "cat": "Shutters blinds flooring",
+  "owners": [
+   "Aaron Godden"
+  ],
+  "role": "Owner",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01354 658100",
+   "07507 528098"
+  ],
+  "emails": [
+   "info@goddensinteriors.co.uk"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "goddens_carpets_home_interiors",
+   "facebook": "goddensmarch",
+   "linkedin": "aaron-godden-b9b99126b"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "hardwickclinic.co.uk",
+  "biz": "Hardwick Clinic",
+  "cat": "Aesthetics clinic",
+  "owners": [
+   "Dr Tatyana Lapa-Enright"
+  ],
+  "role": "Founder, 2013",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 944654",
+   "07501 331191"
+  ],
+  "emails": [
+   "hardwickclinic@yahoo.co.uk"
+  ],
+  "postcode": "CB23 7QJ",
+  "addr": "227 St Neots Road Hardwick Cambridge, CB23 7QJ",
+  "social": {
+   "instagram": "hardwickclinic",
+   "facebook": "hardwickclinic"
+  },
+  "founded": "2009",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "St Neots"
+ },
+ {
+  "dom": "histonfootcare.co.uk",
+  "biz": "Histon Foot Care",
+  "cat": "Podiatry",
+  "owners": [
+   "Andrew Goodwin"
+  ],
+  "role": "Principal",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07762 711916"
+  ],
+  "emails": [
+   "andrew@histonfootcare.co.uk"
+  ],
+  "postcode": "CB24 9JW",
+  "addr": "Histon Foot Care Andrew Goodwin 5 Merton Road, Histon, Cambridge, CB24 9JW",
+  "social": {
+   "linkedin": "andrew-goodwin-3a21a127"
+  },
+  "founded": "2003",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Histon"
+ },
+ {
+  "dom": "hurstparkdental.com",
+  "biz": "Hurst Park Dental",
+  "cat": "Private dentist",
+  "owners": [
+   "Max Leslie"
+  ],
+  "role": "Lead cosmetic dentist",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 356765",
+   "01223 305540"
+  ],
+  "emails": [],
+  "postcode": "CB4 2AE",
+  "addr": "2A Hurst Park Avenue, Cambridge, CB4 2AE",
+  "social": {
+   "facebook": "Hurst-Park-Dental-813048908801345"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "katiemalik.co.uk",
+  "biz": "Katie Malik Design Studio",
+  "cat": "Interior design",
+  "owners": [
+   "Katie Malik"
+  ],
+  "role": "Founder",
+  "ch": "12255650",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 613016"
+  ],
+  "emails": [
+   " info@katiemalik.co.uk",
+   "info@katiemalik.co.uk"
+  ],
+  "postcode": "CB10 1JW",
+  "addr": "2a, 1st Floor, Church Street, Saffron Walden, Essex, CB10 1JW",
+  "social": {
+   "instagram": "katie_malik_design_studio",
+   "facebook": "KatieMalikStudio",
+   "linkedin": "katie-malik-studio"
+  },
+  "founded": "2014",
+  "copyright": "",
+  "platform": "WooCommerce",
+  "booking": [
+   "Calendly"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Saffron Walden"
+ },
+ {
+  "dom": "letsgopunting.co.uk",
+  "biz": "Let's Go Punting",
+  "cat": "Punting tours",
+  "owners": [
+   "Caroline Mary Robinson Godfrey",
+   "Simon Philip Godfrey"
+  ],
+  "role": "Director",
+  "ch": "09031832",
+  "inc": "9 May 2014",
+  "costat": "Active",
+  "sic": [
+   "99999 - Dormant Company"
+  ],
+  "phones": [
+   "01223 651659"
+  ],
+  "emails": [
+   "info@letsgopunting.co.uk"
+  ],
+  "postcode": "CB5 8AG",
+  "addr": "Ln, Cambridge, CB5 8AG",
+  "social": {
+   "instagram": "letsgopunting",
+   "facebook": "letsgopunting",
+   "x": "letsgopunting"
+  },
+  "founded": "1900",
+  "copyright": "2024",
+  "platform": "Shopify",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "counsellingwithmadeleine.co.uk",
+  "biz": "Madeleine Gooding Counselling",
+  "cat": "Counselling",
+  "owners": [
+   "Madeleine Gooding"
+  ],
+  "role": "Owner",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07802 657722"
+  ],
+  "emails": [],
+  "postcode": "CB3 0GP",
+  "addr": "Way, Girton, Cambridge -, CB3 0GP",
+  "social": {
+   "facebook": "counsellingwithmaddy"
+  },
+  "founded": "2016",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Girton"
+ },
+ {
+  "dom": "maioranaupholstery.co.uk",
+  "biz": "Maiorana Upholstery Cambridge",
+  "cat": "Upholstery",
+  "owners": [
+   "Alessio Maiorana"
+  ],
+  "role": "Founder, 1976",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 845448"
+  ],
+  "emails": [
+   "info@maioranaupholstery.co.uk"
+  ],
+  "postcode": "CB2 9HT",
+  "addr": "22 Alpha Terrace Trumpington CAMBRIDGE, CB2 9HT",
+  "social": {
+   "facebook": "maioranaupholstery"
+  },
+  "founded": "1976",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Trumpington"
+ },
+ {
+  "dom": "mb-hairstudio.co.uk",
+  "biz": "MB Hair Studio",
+  "cat": "Hair salon",
+  "owners": [
+   "Mesut Can Polat",
+   "Beata Drzala"
+  ],
+  "role": "Salon owners",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 566882"
+  ],
+  "emails": [
+   "bookings@mb-hairstudio.co.uk"
+  ],
+  "postcode": "CB1 3AA",
+  "addr": "157 Mill Rd, Cambridge, CB1 3AA",
+  "social": {
+   "instagram": "mbhairstudiocambridge",
+   "facebook": "profile.php"
+  },
+  "founded": "2016",
+  "copyright": "",
+  "platform": "Squarespace",
+  "booking": [
+   "OpenTable"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "mensroomcambridge.co.uk",
+  "biz": "Mensroom Cambridge",
+  "cat": "Barber",
+  "owners": [
+   "Simon Swinton"
+  ],
+  "role": "Director",
+  "ch": "06331061",
+  "inc": "1 August 2007",
+  "costat": "Active",
+  "sic": [
+   "96020 - Hairdressing and other beauty treatment"
+  ],
+  "phones": [
+   "01223 211056"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "midsummerhouse.co.uk",
+  "biz": "Midsummer House",
+  "cat": "Restaurant (2 Michelin stars)",
+  "owners": [
+   "Daniel Clifford"
+  ],
+  "role": "Chef patron / owner",
+  "ch": "OC365609",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 369299"
+  ],
+  "emails": [
+   "alice.clifford@midsummerhouse.co.uk",
+   "reservations@midsummerhouse.co.uk"
+  ],
+  "postcode": "CB4 1HA",
+  "addr": "House Midsummer Common Cambridge, CB4 1HA",
+  "social": {
+   "instagram": "midsummer_house_",
+   "facebook": "midsummerhouserestaurant",
+   "x": "Midsummerhouse"
+  },
+  "founded": "1998",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [
+   "OpenTable"
+  ],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "mmwealth.co.uk",
+  "biz": "MM Wealth",
+  "cat": "Financial planning",
+  "owners": [
+   "Adrian Francis John Atkinson",
+   "Rajwinder Singh Basra",
+   "Marc Fuller"
+  ],
+  "role": "Director",
+  "ch": "01454074",
+  "inc": "15 October 1979",
+  "costat": "Active",
+  "sic": [
+   "82990 - Other business support service activities not elsewhere classified"
+  ],
+  "phones": [
+   "01223 233331"
+  ],
+  "emails": [
+   "compliance@mmwealth.co.uk",
+   "info@mmwealth.co.uk"
+  ],
+  "postcode": "CB3 0NA",
+  "addr": "Court, Girton, Cambridge, CB3 0NA",
+  "social": {},
+  "founded": "2016",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Girton"
+ },
+ {
+  "dom": "morgansbutchery.co.uk",
+  "biz": "Morgans Butchery",
+  "cat": "Butcher",
+  "owners": [
+   "Amy Nicholas",
+   "Miles Nicholas"
+  ],
+  "role": "Director",
+  "ch": "11692804",
+  "inc": "22 November 2018",
+  "costat": "Active",
+  "sic": [
+   "47220 - Retail sale of meat and meat products in specialised stores"
+  ],
+  "phones": [
+   "07547 323631"
+  ],
+  "emails": [
+   "morgansbutchery@outlook.com"
+  ],
+  "postcode": "CO9 4AH",
+  "addr": "CO9 4AH",
+  "social": {
+   "instagram": "morgansbutchery",
+   "facebook": "morgansbutchery"
+  },
+  "founded": "2019",
+  "copyright": "2026",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "newdawnblinds.co.uk",
+  "biz": "New Dawn Blinds",
+  "cat": "Blinds & shutters",
+  "owners": [
+   "Steven John Griffiths"
+  ],
+  "role": "Director",
+  "ch": "10053236",
+  "inc": "9 March 2016",
+  "costat": "Active",
+  "sic": [
+   "13921 - Manufacture of soft furnishings"
+  ],
+  "phones": [
+   "01763 243894"
+  ],
+  "emails": [
+   "info@newdawnblinds.co.uk"
+  ],
+  "postcode": "SG8 5JT",
+  "addr": "6a, Highfields Business Park, Old N Rd, Bassingbourn, Royston, SG8 5JT",
+  "social": {
+   "facebook": "NewDawnBlinds"
+  },
+  "founded": "2014",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Royston"
+ },
+ {
+  "dom": "nhkitchendesign.com",
+  "biz": "Nicholas Hythe Kitchen Design",
+  "cat": "Kitchen design",
+  "owners": [
+   "Ross Halliday",
+   "William Halliday"
+  ],
+  "role": "Directors",
+  "ch": "13517645",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01480 468598",
+   "01353 786598"
+  ],
+  "emails": [
+   "info@nicholashythe.co.uk"
+  ],
+  "postcode": "CB7 4EL",
+  "addr": "4 Minster Place Ely Cambridgeshire, CB7 4EL",
+  "social": {
+   "facebook": "Nicholas-Hythe-Kitchen-Design-Studio-127"
+  },
+  "founded": "2009",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Ely"
+ },
+ {
+  "dom": "physioteq.co.uk",
+  "biz": "PhysioTeq",
+  "cat": "Physiotherapy",
+  "owners": [
+   "Lorraine Quantrell",
+   "Thomas Edward Quantrell"
+  ],
+  "role": "Director",
+  "ch": "11906176",
+  "inc": "26 March 2019",
+  "costat": "Active",
+  "sic": [
+   "86220 - Specialists medical practice activities"
+  ],
+  "phones": [
+   "01223 958051"
+  ],
+  "emails": [
+   "info@physioteq.co.uk"
+  ],
+  "postcode": "CB3 0AS",
+  "addr": "Cambridge Sports Centre, Philippa Fawcett Drive, Cambridge, CB3 0AS",
+  "social": {
+   "facebook": "physioteq"
+  },
+  "founded": "",
+  "copyright": "2022",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "pilatesfitcambridge.co.uk",
+  "biz": "Pilatesfit Cambridge",
+  "cat": "Pilates & physio",
+  "owners": [
+   "Rowan Bailey",
+   "Oliver David Lee Wilson"
+  ],
+  "role": "Director",
+  "ch": "08857086",
+  "inc": "22 January 2014",
+  "costat": "Active",
+  "sic": [
+   "96040 - Physical well-being activities"
+  ],
+  "phones": [
+   "01223 914415"
+  ],
+  "emails": [
+   "enquiries@vineryroadstudios.co.uk"
+  ],
+  "postcode": "CB1 3DN",
+  "addr": "49 Vinery Road Cambridge, CB1 3DN",
+  "social": {
+   "instagram": "vineryroadstudios",
+   "facebook": "VineryRoadStudios"
+  },
+  "founded": "",
+  "copyright": "2023",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "planninghouse.co.uk",
+  "biz": "Planning House Cambridge",
+  "cat": "Town planning",
+  "owners": [
+   "Chris Pipe"
+  ],
+  "role": "Founder",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07944 844882"
+  ],
+  "emails": [
+   "%20info@planninghouse.co.uk",
+   "info@planninghouse.co.uk"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "facebook": "PlanningHouseLtd",
+   "linkedin": "planning-house",
+   "x": "_planninghouse"
+  },
+  "founded": "",
+  "copyright": "2016",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "redmonsterprint.co.uk",
+  "biz": "Red Monster Print Cambridge",
+  "cat": "Large format printing",
+  "owners": [
+   "Lorraine Allison Brown"
+  ],
+  "role": "Director",
+  "ch": "08277213",
+  "inc": "1 November 2012",
+  "costat": "Active",
+  "sic": [
+   "18129 - Printing not elsewhere classified"
+  ],
+  "phones": [
+   "01223 837799"
+  ],
+  "emails": [],
+  "postcode": "CB22 3BG",
+  "addr": "69 High Street, Sawston, Cambridge, CB22 3BG",
+  "social": {},
+  "founded": "",
+  "copyright": "2026",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Sawston"
+ },
+ {
+  "dom": "revivemassagecambourne.co.uk",
+  "biz": "Revive Massage Therapy",
+  "cat": "Massage",
+  "owners": [
+   "Aneta Plutowska"
+  ],
+  "role": "Founder",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07931 150031"
+  ],
+  "emails": [
+   "aneta.plutowska@gmail.com"
+  ],
+  "postcode": "CB23 6EQ",
+  "addr": "1 Wallis Walk, Upper Cambourne, Cambridge, CB23 6EQ",
+  "social": {},
+  "founded": "",
+  "copyright": "2026",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambourne"
+ },
+ {
+  "dom": "riasinteriors.co.uk",
+  "biz": "Rias Interiors Cambridge",
+  "cat": "Curtains blinds shutters",
+  "owners": [
+   "Paul Wise",
+   "Victoria Alethea Wise"
+  ],
+  "role": "Director",
+  "ch": "17121558",
+  "inc": "27 March 2026",
+  "costat": "Active",
+  "sic": [
+   "43320 - Joinery installation"
+  ],
+  "phones": [
+   "01733 462280",
+   "07432 274226"
+  ],
+  "emails": [
+   "ria@riasinteriors.co.uk"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "rias_interiors",
+   "facebook": "interiorsria"
+  },
+  "founded": "",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "rulos.co.uk",
+  "biz": "Rulos Barbers",
+  "cat": "Barber",
+  "owners": [
+   "Giovanni Favarulo"
+  ],
+  "role": "Founder",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 778593",
+   "01223 261043"
+  ],
+  "emails": [],
+  "postcode": "CB2 9JE",
+  "addr": "4 Anstey Way, Cambridgeshire, CB2 9JE",
+  "social": {
+   "instagram": "rulosbarbers",
+   "facebook": "rulosbarbers"
+  },
+  "founded": "1997",
+  "copyright": "2025",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "rutherfordspunting.com",
+  "biz": "Rutherford's Punting",
+  "cat": "Punting tours",
+  "owners": [
+   "James Rutherford",
+   "Emma Wynne"
+  ],
+  "role": "Directors",
+  "ch": "12207225",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 322200"
+  ],
+  "emails": [],
+  "postcode": "CB5 8AQ",
+  "addr": "Green Moorings, Quayside Boardwalk Cambridge, CB5 8AQ",
+  "social": {
+   "instagram": "rutherfordspuntingcambridge",
+   "facebook": "rutherfordspunting"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "sproctor.co.uk",
+  "biz": "S L Proctor Upholstery",
+  "cat": "Upholstery",
+  "owners": [
+   "Shaun Proctor"
+  ],
+  "role": "Owner",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07549 388200"
+  ],
+  "emails": [],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {},
+  "founded": "1940",
+  "copyright": "2015",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "sageblinds.co.uk",
+  "biz": "Sage Blinds",
+  "cat": "Blinds & shutters",
+  "owners": [
+   "Martin Sorrell",
+   "Clare Sorrell"
+  ],
+  "role": "Owners",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01763 263399"
+  ],
+  "emails": [
+   "hello@sageblinds.co.uk"
+  ],
+  "postcode": "SG8 6EY",
+  "addr": "Cambridge Road, Melbourn, Royston, SG8 6EY",
+  "social": {
+   "facebook": "sageblinds"
+  },
+  "founded": "2014",
+  "copyright": "2020",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Melbourn"
+ },
+ {
+  "dom": "salus-wellness.com",
+  "biz": "Salus Wellness",
+  "cat": "Wellness clinic",
+  "owners": [
+   "Massimo Gaetani"
+  ],
+  "role": "Director",
+  "ch": "07241554",
+  "inc": "4 May 2010",
+  "costat": "Active",
+  "sic": [
+   "96040 - Physical well-being activities"
+  ],
+  "phones": [
+   "01223 300222",
+   "07957 334740",
+   "07435 335159"
+  ],
+  "emails": [
+   "dina@strongintentions.co.uk",
+   "hello@thenutritiousway.com",
+   "hongvantrinh@hotmail.com",
+   "info@salus-wellness.com"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "saluswellnessclinics",
+   "facebook": "SalusWellness",
+   "x": "saluswellness"
+  },
+  "founded": "",
+  "copyright": "2010",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "scholarspuntingcambridge.co.uk",
+  "biz": "Scholars Punting Cambridge",
+  "cat": "Punting tours",
+  "owners": [
+   "Ashley Mark Dalton"
+  ],
+  "role": "Director",
+  "ch": "11851199",
+  "inc": "27 February 2019",
+  "costat": "Active",
+  "sic": [
+   "79120 - Tour operator activities"
+  ],
+  "phones": [
+   "01223 430049"
+  ],
+  "emails": [
+   "ashley@scholarspuntingcambridge.co.uk"
+  ],
+  "postcode": "CB5 8AG",
+  "addr": "35 Beaufort Place, Thompson’s Lane, Cambridge, CB5 8AG",
+  "social": {
+   "instagram": "scholarspunting",
+   "facebook": "ScholarsPuntingCambridge",
+   "x": "ScholarsPunting"
+  },
+  "founded": "",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "scruffs.co.uk",
+  "biz": "Scruffs",
+  "cat": "Hair salon",
+  "owners": [
+   "Garry Chapman",
+   "Grant Chapman"
+  ],
+  "role": "Owners, second generation",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 355358"
+  ],
+  "emails": [
+   "salon@scruffs.co.uk"
+  ],
+  "postcode": "CB2 1UR",
+  "addr": "68/69 Bridge Street, Cambridge, CB2 1UR",
+  "social": {
+   "instagram": "scruffs_hairdressing",
+   "facebook": "Scruffs-Hairdressing-2279295445475177"
+  },
+  "founded": "1968",
+  "copyright": "",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "scudamores.com",
+  "biz": "Scudamore's Punting",
+  "cat": "Punting tours",
+  "owners": [
+   "Roderick Ian Ingersent",
+   "James Donnelly Macnaghten"
+  ],
+  "role": "Director",
+  "ch": "02787361",
+  "inc": "5 February 1993",
+  "costat": "Active",
+  "sic": [
+   "50300 - Inland passenger water transport",
+   "77210 - Renting and leasing of recreational and sports goods",
+   "79120 - Tour operator activities"
+  ],
+  "phones": [
+   "01223 359750"
+  ],
+  "emails": [
+   "enquiries@scudamores.com"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "puntingcambridge",
+   "facebook": "scudamores",
+   "linkedin": "scudamore",
+   "x": "scudamorespunts"
+  },
+  "founded": "1910",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "sohofineart.co.uk",
+  "biz": "Soho Fine Art Cambridge",
+  "cat": "Art gallery",
+  "owners": [
+   "Jackie Ritsema"
+  ],
+  "role": "Executive Gallery Director",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 304676",
+   "01159 241667",
+   "01227 787881"
+  ],
+  "emails": [],
+  "postcode": "CB2 1UA",
+  "addr": "Cambridge 3, Bridge Street Cambridge, CB2 1UA",
+  "social": {
+   "facebook": "sohofineart"
+  },
+  "founded": "",
+  "copyright": "",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "sunriseblinds.co.uk",
+  "biz": "Sunrise Blinds",
+  "cat": "Blinds & awnings",
+  "owners": [
+   "Alan Charles Gurner"
+  ],
+  "role": "Director",
+  "ch": "07058948",
+  "inc": "28 October 2009",
+  "costat": "Active",
+  "sic": [
+   "13921 - Manufacture of soft furnishings"
+  ],
+  "phones": [
+   "01638 668447",
+   "01553 819938"
+  ],
+  "emails": [
+   "enquiries@sunriseblinds.co.uk"
+  ],
+  "postcode": "CB8 7SX",
+  "addr": "16, Acorn Business Centre Oaks Drive Newmarket, CB8 7SX",
+  "social": {
+   "instagram": "sunriseblindsuk",
+   "facebook": "SunRiseBlindsuk",
+   "x": "SunRiseblinds"
+  },
+  "founded": "1998",
+  "copyright": "2026",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Newmarket"
+ },
+ {
+  "dom": "sngardendesign.co.uk",
+  "biz": "Sylvia Newman Garden Design",
+  "cat": "Garden design",
+  "owners": [
+   "Edward John Newman",
+   "Sylvia Mary Newman"
+  ],
+  "role": "Director",
+  "ch": "03095313",
+  "inc": "25 August 1995",
+  "costat": "Active",
+  "sic": [
+   "81300 - Landscape service activities"
+  ],
+  "phones": [
+   "01954 583239"
+  ],
+  "emails": [
+   "contact@sngd.co.uk"
+  ],
+  "postcode": "CB24 3DW",
+  "addr": "Green End Farm, Over Rd, Longstanton, Cambridge, CB24 3DW",
+  "social": {},
+  "founded": "",
+  "copyright": "2025",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Over"
+ },
+ {
+  "dom": "tattoocrazy.co.uk",
+  "biz": "Tattoo Crazy Cambridge",
+  "cat": "Tattoo studio",
+  "owners": [
+   "Barry Butt",
+   "Lindsey Jane Butt",
+   "Nathanial Josiah Butt"
+  ],
+  "role": "Director",
+  "ch": "04762761",
+  "inc": "13 May 2003",
+  "costat": "Active",
+  "sic": [
+   "96090 - Other service activities not elsewhere classified"
+  ],
+  "phones": [
+   "01354 659532",
+   "01223 305635",
+   "01354 659625"
+  ],
+  "emails": [
+   "tat2crazy@aol.com",
+   "tattoocrazycambs@hotmail.co.uk"
+  ],
+  "postcode": "CB1 1NL",
+  "addr": "31 Hobson Street, Cambridge, Cambridgeshire, CB1 1NL",
+  "social": {
+   "instagram": "tattoocrazy_cambridge",
+   "facebook": "tattoocrazyuk"
+  },
+  "founded": "1981",
+  "copyright": "",
+  "platform": "Custom/unknown",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "thebarberscambridge.co.uk",
+  "biz": "The Barbers Cambridge",
+  "cat": "Barber",
+  "owners": [
+   "Louise Mary Traynier"
+  ],
+  "role": "Director",
+  "ch": "11340071",
+  "inc": "1 May 2018",
+  "costat": "Active",
+  "sic": [
+   "96020 - Hairdressing and other beauty treatment"
+  ],
+  "phones": [
+   "01223 470126"
+  ],
+  "emails": [
+   "info@thebarberscambridge.co.uk"
+  ],
+  "postcode": "CB1 1LH",
+  "addr": "2 27 King Street, Cambridge, CB1 1LH",
+  "social": {
+   "instagram": "thebarberscambridge",
+   "x": "bolt"
+  },
+  "founded": "2018",
+  "copyright": "",
+  "platform": "Wix",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "thebespoketailor.co.uk",
+  "biz": "The Bespoke Tailor Cambridge",
+  "cat": "Tailor",
+  "owners": [
+   "Adrian Barrows"
+  ],
+  "role": "Director",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07968 438717"
+  ],
+  "emails": [
+   "adrian@thebespoketailor.co.uk"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "TheBespokeTailor",
+   "facebook": "thebespoketailor",
+   "linkedin": "adrianbarrows",
+   "x": "tweetingtailor"
+  },
+  "founded": "1996",
+  "copyright": "",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "freepresscambridge.com",
+  "biz": "The Free Press Cambridge",
+  "cat": "Pub",
+  "owners": [
+   "Megan Stepney",
+   "Thomas Stepney"
+  ],
+  "role": "Owners, siblings",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 368337"
+  ],
+  "emails": [
+   "contact@freepresscambridge.com"
+  ],
+  "postcode": "CB1 1DU",
+  "addr": "7 Prospect Row Cambridge, CB1 1DU",
+  "social": {
+   "instagram": "freepresscambridge",
+   "facebook": "2008"
+  },
+  "founded": "1984",
+  "copyright": "",
+  "platform": "Squarespace",
+  "booking": [
+   "OpenTable"
+  ],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "timjenningsdesign.co.uk",
+  "biz": "Tim Jennings Garden Design",
+  "cat": "Garden design",
+  "owners": [
+   "Tim Jennings"
+  ],
+  "role": "Owner & lead designer",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "07931 278692"
+  ],
+  "emails": [
+   "tim@timjenningsdesign.co.uk"
+  ],
+  "postcode": "CB25 9HD",
+  "addr": "House, Fen Road, Lode, Cambridge, CB25 9HD",
+  "social": {
+   "instagram": "timjenningsdesign",
+   "facebook": "profile.php",
+   "linkedin": "tim-jennings-0a8a27134"
+  },
+  "founded": "",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "new",
+  "town": "Lode"
+ },
+ {
+  "dom": "totalhealthclinics.com",
+  "biz": "Total Health Clinics",
+  "cat": "Physiotherapy",
+  "owners": [
+   "Ben Barker"
+  ],
+  "role": "Founder",
+  "ch": "",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01733 857537",
+   "01223 355344",
+   "01780 438858"
+  ],
+  "emails": [
+   "a",
+   "adm",
+   "admin@totalhealthclinics.com"
+  ],
+  "postcode": "",
+  "addr": "Cambridge",
+  "social": {
+   "instagram": "totalhealthclinics",
+   "facebook": "totalhealthclinics"
+  },
+  "founded": "2000",
+  "copyright": "2026",
+  "platform": "WordPress",
+  "booking": [],
+  "ecom": false,
+  "mobile": true,
+  "src": "old",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "wandpblinds.co.uk",
+  "biz": "W&P Blinds Cambridge",
+  "cat": "Blinds & curtains",
+  "owners": [
+   "Hazel Joy White",
+   "Sean Paul White"
+  ],
+  "role": "Director",
+  "ch": "06826687",
+  "inc": "23 February 2009",
+  "costat": "Active — Active proposal to strike off",
+  "sic": [
+   "31090 - Manufacture of other furniture"
+  ],
+  "phones": [
+   "01223 243030"
+  ],
+  "emails": [
+   "hello@wandpblinds.co.uk",
+   "info@wandpblinds.co.uk"
+  ],
+  "postcode": "CB1 9YW",
+  "addr": "4 Violet Close, Cambridge, CB1 9YW",
+  "social": {
+   "instagram": "wandpblinds",
+   "facebook": "wandpblindsltd",
+   "x": "bolt"
+  },
+  "founded": "1974",
+  "copyright": "",
+  "platform": "Wix",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "new",
+  "town": "Cambridge"
+ },
+ {
+  "dom": "willowgrangefarm.co.uk",
+  "biz": "Willow Grange Farm Shop",
+  "cat": "Farm shop & cafe",
+  "owners": [
+   "Clara Campbell-Beavis",
+   "Errol Campbell-Beavis"
+  ],
+  "role": "Directors",
+  "ch": "15617221",
+  "inc": "",
+  "costat": "",
+  "sic": [],
+  "phones": [
+   "01223 481183"
+  ],
+  "emails": [
+   "%20cafe@willowgrangefarm.co.uk%20",
+   "%20info@willowgrangefarm.co.uk%20",
+   "butcher@willowgrangefarm.co.uk",
+   "cafe@willowgrangefarm.co.uk"
+  ],
+  "postcode": "CB25 9PL",
+  "addr": "Farm Willow Grange Farm, Ely Road, Chittering, Cambridge, CB25 9PL",
+  "social": {
+   "instagram": "willowgrangefarm",
+   "facebook": "Willow-Grange-Farm-Shop-and-Cafe"
+  },
+  "founded": "",
+  "copyright": "2026",
+  "platform": "WooCommerce",
+  "booking": [],
+  "ecom": true,
+  "mobile": true,
+  "src": "old",
+  "town": "Ely"
+ }
+]
