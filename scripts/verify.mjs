@@ -73,13 +73,18 @@ await page.evaluate(() => { if (typeof renderAll === 'function') renderAll(); })
 console.log('\n— 0. STORED LEADS SURVIVE A LOAD —');
 // Regression guard: loadState() swallows its own exceptions and falls back to the 3 demo
 // leads, so anything that throws in there silently replaces a rep's whole book.
+// Built-in researched lists (Cambridge Boutiques) are seeded on top of whatever localStorage
+// held, by design — an existing rep must receive the list too. They are excluded here so this
+// check keeps testing the thing it was written for: that stored leads win over the demo data.
 const loaded = await page.evaluate(() => ({
   n: state.leads.length,
   samples: state.leads.filter(l => l.source === 'sample').length,
-  ids: state.leads.map(l => l.id).sort()
+  ids: state.leads.filter(l => !l.list).map(l => l.id).sort(),
+  listed: state.leads.filter(l => l.list).length
 }));
 check('localStorage leads load, no demo-data fallback',
-  loaded.samples === 0 && loaded.ids.join(',') === 'c1,c2,q1,q2,q3', loaded.n + ' leads: ' + loaded.ids);
+  loaded.samples === 0 && loaded.ids.join(',') === 'c1,c2,q1,q2,q3',
+  loaded.n + ' leads: ' + loaded.ids + (loaded.listed ? ' (+' + loaded.listed + ' list leads)' : ''));
 
 console.log('\n— 1. WRITE AMPLIFICATION (the "move didn\'t stick" root cause) —');
 const amp = await page.evaluate(() => {
@@ -293,7 +298,8 @@ const bulk = await page.evaluate(async () => {
   if (btn) btn.click();
   const picked = (state.bulkSelection || []).length;
   await applyBulkAction('qualified', 'move-to-crm');
-  return { picked, leftQualified: state.leads.filter(l => l.status === 'qualified').length,
+  // List leads sit in their own tab, so "the Qualified grid is empty" is what must hold here.
+  return { picked, leftQualified: state.leads.filter(l => l.status === 'qualified' && !l.list).length,
            inCrm: state.leads.filter(l => l.status === 'crm').length };
 });
 check('select-all-shown then move sends the batch to Outreach',

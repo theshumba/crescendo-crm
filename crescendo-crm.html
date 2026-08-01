@@ -1073,6 +1073,11 @@ button { -webkit-tap-highlight-color: transparent; }
         Qualified Leads
         <span class="nav-badge nav-badge-teal" id="badge-qualified" aria-live="polite">0</span>
       </button>
+      <button class="nav-item" data-section="cambridge-boutique">
+        <i data-lucide="store" aria-hidden="true"></i>
+        Cambridge Boutiques
+        <span class="nav-badge nav-badge-teal" id="badge-cambridge-boutique" aria-live="polite">0</span>
+      </button>
       <button class="nav-item" data-section="crm">
         <i data-lucide="target" aria-hidden="true"></i>
         CRM / Outreach
@@ -1161,6 +1166,11 @@ button { -webkit-tap-highlight-color: transparent; }
       <!-- Qualified Leads -->
       <section id="section-qualified-leads" aria-label="Qualified Leads">
         <div id="qualified-leads-content"></div>
+      </section>
+
+      <!-- Cambridge Boutiques (own list, kept out of Lead Bank / Qualified Leads) -->
+      <section id="section-cambridge-boutique" aria-label="Cambridge Boutiques">
+        <div id="cambridge-boutique-content"></div>
       </section>
 
       <!-- CRM -->
@@ -1308,6 +1318,7 @@ const state = {
     leadBank: { search: '', status: 'all', source: 'all', assignedTo: 'all', today: false },
     crm: { search: '', stage: 'all', priority: 'all', overdueOnly: false, assignedTo: 'all', today: false, touchedToday: false, stalled: false, followUp: 'all' },
     qualified: { search: '', industry: 'all', city: 'all', source: 'all', assignedTo: 'all', hasPhone: false, sort: 'score' },
+    cambridge: { search: '', industry: 'all', city: 'all', assignedTo: 'all', hasEmail: false, verified: 'all', sort: 'name' },
     archive: {}
   },
   panelOpen: false,
@@ -1326,11 +1337,13 @@ const state = {
   archiveOverdueOnly: false, // archive banner toggle: show only leads whose follow-up is overdue
   lbLimit: 60,          // lead-bank incremental render limit (reset on filter change)
   crmLimit: 40,         // CRM list incremental render limit
-  qualLimit: 60         // qualified-leads incremental render limit
+  qualLimit: 60,        // qualified-leads incremental render limit
+  cbqLimit: 60          // Cambridge Boutiques incremental render limit
 };
 const LB_PAGE = 60;
 const CRM_PAGE = 40;
 const QUAL_PAGE = 60;
+const CBQ_PAGE = 60;
 // Content hash per lead, so saveState can tell which leads a write actually touched.
 // Declared up here, not next to saveState: loadState() seeds it and runs long before that
 // point in the file, and a `const` in the temporal dead zone throws — which loadState swallows,
@@ -2344,6 +2357,53 @@ function normalizeLead(l) {
   if (Array.isArray(state.leads)) state.leads.forEach(l => normalizeLead(l));
 })();
 
+// ========== CAMBRIDGE BOUTIQUES LIST ==========
+// A researched Cambridge list that lives in its own tab rather than in the Lead Bank or the
+// Qualified Leads grid. Every row was only kept if a website, a direct phone number AND a named
+// owner or founder could all be verified; `companiesHouse` is set where the owner is an active
+// director on the public register. Ids are name slugs, never randomUUID, so every device seeds
+// the SAME id and the first cloud sync merges instead of cloning the list 52 times over.
+const CBQ_LIST = 'cambridge-boutique';
+let CBQ_LEADS = [];
+try { CBQ_LEADS = [{"id":"cbq-all-eyes-spectacle-makers","businessName":"All Eyes Spectacle Makers","industry":"Optician","website":"https://all-eyes.co.uk","address":"Over, Cambridgeshire","phones":[{"number":"01954 231545"}],"emails":[],"contacts":[{"name":"Jeremy Izard","title":"Director","phone":"01954 231545","email":""}],"description":"Independent optician in Over, Cambridgeshire. Contact: Jeremy Izard (director). Owner verified against Companies House (company no. 05099306), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"05099306"},{"id":"cbq-barker-bros-butchers","businessName":"Barker Bros Butchers","industry":"Butcher","website":"https://barkerbrosbutchers.co.uk","address":"5 High Green, Great Shelford, Cambridge","phones":[{"number":"01223 843292"}],"emails":[],"contacts":[{"name":"David Barker","title":"Directors","phone":"01223 843292","email":""},{"name":"Katherine Barker","title":"Directors","phone":"","email":""},{"name":"Stuart Barker","title":"Directors","phone":"","email":""}],"description":"Independent butcher in 5 High Green, Great Shelford, Cambridge. Contact: David Barker, Katherine Barker, Stuart Barker (directors). Owner verified against Companies House (company no. 07702780), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"07702780"},{"id":"cbq-barnwell-barbers","businessName":"Barnwell Barbers","industry":"Barber","website":"https://barnwellbarbers.co.uk","address":"9 Barnwell Road, Cambridge","phones":[{"number":"01223 241964"}],"emails":[],"contacts":[{"name":"Paul McGeorge","title":"Director","phone":"01223 241964","email":""}],"description":"Independent barber in 9 Barnwell Road, Cambridge. Contact: Paul McGeorge (director). Owner verified against Companies House (company no. 07317186), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"07317186"},{"id":"cbq-boxed-events","businessName":"Boxed Events","industry":"Catering & events","website":"https://boxedevents.co.uk","address":"Histon, Cambridge","phones":[{"number":"01223 779942"}],"emails":[],"contacts":[{"name":"James Knight","title":"Director","phone":"01223 779942","email":""}],"description":"Independent catering & events in Histon, Cambridge. Contact: James Knight (director). Owner verified against Companies House (company no. 09733842), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"09733842"},{"id":"cbq-buds-fitness","businessName":"Buds Fitness","industry":"Fitness coaching","website":"https://budsfitness.co.uk","address":"Sawtry, Huntingdon, Cambridgeshire","phones":[{"number":"07376 714342"}],"emails":[{"address":"info@budsfitness.co.uk"}],"contacts":[{"name":"Abigail Baker","title":"Directors","phone":"07376 714342","email":"info@budsfitness.co.uk"},{"name":"Liam Baker","title":"Directors","phone":"","email":""}],"description":"Independent fitness coaching in Sawtry, Huntingdon, Cambridgeshire. Contact: Abigail Baker, Liam Baker (directors). Owner verified against Companies House (company no. 14450209), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"14450209"},{"id":"cbq-bush-co","businessName":"Bush & Co","industry":"Estate agent","website":"https://bushandco.co.uk","address":"Great Shelford, Cambridge","phones":[{"number":"01223 246262"}],"emails":[{"address":"abush@bushandco.co.uk"}],"contacts":[{"name":"Andrew Bush","title":"Founder, 1996","phone":"01223 246262","email":"abush@bushandco.co.uk"}],"description":"Independent estate agent in Great Shelford, Cambridge. Contact: Andrew Bush (founder, 1996). Owner named on the business's own website and confirmed as an active director at Companies House (company no. 04389844).","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"04389844"},{"id":"cbq-cam-osteopathy","businessName":"Cam Osteopathy","industry":"Osteopathy","website":"https://camosteopathy.co.uk","address":"Waterbeach, Cambridge","phones":[{"number":"07982 432732"}],"emails":[{"address":"info@camosteopathy.co.uk"}],"contacts":[{"name":"Ian Lewis","title":"Director","phone":"07982 432732","email":"info@camosteopathy.co.uk"}],"description":"Independent osteopathy in Waterbeach, Cambridge. Contact: Ian Lewis (director). Owner verified against Companies House (company no. 10260219), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"10260219"},{"id":"cbq-cambridge-crafted-kitchens","businessName":"Cambridge Crafted Kitchens","industry":"Kitchen design","website":"https://cambridgecraftedkitchens.co.uk","address":"Saxon Farm, Lode, Cambridge","phones":[{"number":"01223 904150"}],"emails":[{"address":"info@cambridgecraftedkitchens.co.uk"}],"contacts":[{"name":"Dylan Wade-Gledhill","title":"Directors","phone":"01223 904150","email":"info@cambridgecraftedkitchens.co.uk"},{"name":"Sarah Wade-Gledhill","title":"Directors","phone":"","email":""}],"description":"Independent kitchen design in Saxon Farm, Lode, Cambridge. Contact: Dylan Wade-Gledhill, Sarah Wade-Gledhill (directors). Owner verified against Companies House (company no. 10669371), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"10669371"},{"id":"cbq-cambridge-dental","businessName":"Cambridge Dental","industry":"Private dentist","website":"https://cambridge.dental","address":"Cambridge","phones":[{"number":"01223 461381"}],"emails":[],"contacts":[{"name":"Dr Geeta Bellis","title":"Lead dentist","phone":"01223 461381","email":""}],"description":"Independent private dentist in Cambridge. Contact: Dr Geeta Bellis (lead dentist). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-cambridge-osteopaths","businessName":"Cambridge Osteopaths","industry":"Osteopathy","website":"https://cambridgeosteopaths.com","address":"Cambridge","phones":[{"number":"01223 841541"}],"emails":[{"address":"reception@cambridgeosteopaths.com"}],"contacts":[{"name":"Alexander Taylor","title":"Proprietor","phone":"01223 841541","email":"reception@cambridgeosteopaths.com"}],"description":"Independent osteopathy in Cambridge. Contact: Alexander Taylor (proprietor). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-cambridge-photographers","businessName":"Cambridge Photographers","industry":"Photography","website":"https://cambridgephotographers.co.uk","address":"Lower Cambourne, Cambridge","phones":[{"number":"01223 927055"}],"emails":[],"contacts":[{"name":"Jean-Luc Benazet","title":"Director","phone":"01223 927055","email":""}],"description":"Independent photography in Lower Cambourne, Cambridge. Contact: Jean-Luc Benazet (director). Owner verified against Companies House (company no. 09040225), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"09040225"},{"id":"cbq-cambridge-punters","businessName":"Cambridge Punters","industry":"Punting tours","website":"https://cambridgepunters.com","address":"Hope Street, Cambridge","phones":[{"number":"07807 718592"}],"emails":[{"address":"info@cambridgepunters.com"}],"contacts":[{"name":"Julian Fowler","title":"Directors","phone":"07807 718592","email":"info@cambridgepunters.com"},{"name":"Thomas Lohman-O'Donovan","title":"Directors","phone":"","email":""}],"description":"Independent punting tours in Hope Street, Cambridge. Contact: Julian Fowler, Thomas Lohman-O'Donovan (directors). Owner verified against Companies House (company no. 10610846), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"10610846"},{"id":"cbq-cambridge-skin-clinic","businessName":"Cambridge Skin Clinic","industry":"Aesthetics clinic","website":"https://camskinclinic.com","address":"7 Signet Court, Cambridge","phones":[{"number":"01223 631060"}],"emails":[{"address":"info@camskinclinic.com"}],"contacts":[{"name":"Dr Li Li","title":"Director","phone":"01223 631060","email":"info@camskinclinic.com"}],"description":"Independent aesthetics clinic in 7 Signet Court, Cambridge. Contact: Dr Li Li (director). Owner verified against Companies House (company no. 15998105), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"15998105"},{"id":"cbq-cambridge-smile-studio","businessName":"Cambridge Smile Studio","industry":"Private dentist","website":"https://dentalsurgerygroup.co.uk","address":"Cambridge","phones":[{"number":"01223 778141"}],"emails":[{"address":"info@cambridgesmilestudio.co.uk"}],"contacts":[{"name":"Dr Bindi Shah","title":"Principal dentist; director","phone":"01223 778141","email":"info@cambridgesmilestudio.co.uk"},{"name":"Dipen Shah","title":"Principal dentist; director","phone":"","email":""}],"description":"Independent private dentist in Cambridge. Contact: Dr Bindi Shah, Dipen Shah (principal dentist; director). Owner named on the business's own website and confirmed as an active director at Companies House (company no. 06408338).","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"06408338"},{"id":"cbq-carmelo-hair","businessName":"Carmelo Hair","industry":"Barber & hair","website":"https://carmelohair.co.uk","address":"Great Shelford, Cambridge","phones":[{"number":"01223 311806"}],"emails":[],"contacts":[{"name":"Carmelo De Masi","title":"Directors","phone":"01223 311806","email":""},{"name":"Patricia De Masi","title":"Directors","phone":"","email":""}],"description":"Independent barber & hair in Great Shelford, Cambridge. Contact: Carmelo De Masi, Patricia De Masi (directors). Owner verified against Companies House (company no. 08073933), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"08073933"},{"id":"cbq-catherine-jones-jewellers","businessName":"Catherine Jones Jewellers","industry":"Jeweller","website":"https://catherinejones.com","address":"9 Bridge Street, Cambridge","phones":[{"number":"01223 361596"}],"emails":[],"contacts":[{"name":"Vanessa Burkitt","title":"Director","phone":"01223 361596","email":""}],"description":"Independent jeweller in 9 Bridge Street, Cambridge. Contact: Vanessa Burkitt (director). Owner verified against Companies House (company no. 03985266), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"03985266"},{"id":"cbq-chardome","businessName":"Chardome","industry":"Bespoke kitchens & furniture","website":"https://chardome.co.uk","address":"Burwell, Cambridge","phones":[{"number":"01223 651056"}],"emails":[{"address":"enquiries@chardome.co.uk"}],"contacts":[{"name":"Jonathan Chardome","title":"Directors","phone":"01223 651056","email":"enquiries@chardome.co.uk"},{"name":"Valentin Chardome","title":"Directors","phone":"","email":""}],"description":"Independent bespoke kitchens & furniture in Burwell, Cambridge. Contact: Jonathan Chardome, Valentin Chardome (directors). Owner verified against Companies House (company no. 12527724), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"12527724"},{"id":"cbq-crown-catering-cambridge","businessName":"Crown Catering Cambridge","industry":"Catering","website":"https://crowncateringcambridge.com","address":"Great Chesterford, Saffron Walden","phones":[{"number":"01638 507702"}],"emails":[],"contacts":[{"name":"Roger Hornett","title":"Chairman & Chief Executive","phone":"01638 507702","email":""}],"description":"Independent catering in Great Chesterford, Saffron Walden. Contact: Roger Hornett (chairman & chief executive). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-dr-ines-ribeiro","businessName":"Dr Ines Ribeiro","industry":"Cosmetic dentist","website":"https://drinesribeiro.com","address":"Cambridge","phones":[{"number":"07874 052468"}],"emails":[],"contacts":[{"name":"Dr Ines Ribeiro","title":"Owner","phone":"07874 052468","email":""}],"description":"Independent cosmetic dentist in Cambridge. Contact: Dr Ines Ribeiro (owner). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-dye-s-hair-beauty","businessName":"Dye's Hair & Beauty","industry":"Hair salon","website":"https://dyeshairandbeauty.co.uk","address":"Arbury Court, Cambridge","phones":[{"number":"01223 302080"}],"emails":[],"contacts":[{"name":"Diane Cundell","title":"Founder, 1998","phone":"01223 302080","email":""}],"description":"Independent hair salon in Arbury Court, Cambridge. Contact: Diane Cundell (founder, 1998). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-eyes-of-swavesey","businessName":"Eyes of Swavesey","industry":"Optician","website":"https://eyesofswavesey.co.uk","address":"Swavesey, Cambridge","phones":[{"number":"01954 231158"}],"emails":[{"address":"info@eyesofswavesey.co.uk"}],"contacts":[{"name":"Emma Logan","title":"Director & Senior Optometrist","phone":"01954 231158","email":"info@eyesofswavesey.co.uk"}],"description":"Independent optician in Swavesey, Cambridge. Contact: Emma Logan (director & senior optometrist). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-fantasia-scuseme","businessName":"Fantasia (Scuseme)","industry":"Lifestyle retail","website":"https://scuseme.co.uk","address":"Mill Road, Cambridge","phones":[{"number":"01223 520373"}],"emails":[{"address":"help@scuseme.co.uk"}],"contacts":[{"name":"Pam Wesson","title":"Owner","phone":"01223 520373","email":"help@scuseme.co.uk"}],"description":"Independent lifestyle retail in Mill Road, Cambridge. Contact: Pam Wesson (owner). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-fen-ditton-gallery","businessName":"Fen Ditton Gallery","industry":"Art gallery","website":"https://fendittongallery.com","address":"Fen Ditton, Cambridge","phones":[{"number":"01223 295657"}],"emails":[{"address":"info@fendittongallery.com"}],"contacts":[{"name":"Hannah Munby","title":"Owners (mother & daughter)","phone":"01223 295657","email":"info@fendittongallery.com"},{"name":"Lotte Attwood","title":"Owners (mother & daughter)","phone":"","email":""}],"description":"Independent art gallery in Fen Ditton, Cambridge. Contact: Hannah Munby, Lotte Attwood (owners (mother & daughter)). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-fitzbillies","businessName":"Fitzbillies","industry":"Bakery & cafe","website":"https://fitzbillies.com","address":"51-52 Trumpington Street, Cambridge","phones":[{"number":"01223 211150"}],"emails":[],"contacts":[{"name":"Tim Hayward","title":"Directors","phone":"01223 211150","email":""},{"name":"Alison Wright","title":"Directors","phone":"","email":""}],"description":"Independent bakery & cafe in 51-52 Trumpington Street, Cambridge. Contact: Tim Hayward, Alison Wright (directors). Owner verified against Companies House (company no. 07596472), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"07596472"},{"id":"cbq-flowerverse","businessName":"Flowerverse","industry":"Florist","website":"https://flowerverse.co.uk","address":"Cambridge","phones":[{"number":"01223 655170"}],"emails":[],"contacts":[{"name":"Natalia Golowicz","title":"Founder","phone":"01223 655170","email":""}],"description":"Independent florist in Cambridge. Contact: Natalia Golowicz (founder). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-gallery-above","businessName":"Gallery Above","industry":"Gallery & gifts (Linton)","website":"https://galleryabove.co.uk","address":"Linton, Cambridge","phones":[{"number":"01223 894899"}],"emails":[{"address":"info@galleryabove.co.uk"}],"contacts":[{"name":"Rosemary Wellings","title":"Owner","phone":"01223 894899","email":"info@galleryabove.co.uk"}],"description":"Independent gallery & gifts (linton) in Linton, Cambridge. Contact: Rosemary Wellings (owner). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-gardner-denley","businessName":"Gardner Denley","industry":"Property buying agent","website":"https://gardnerdenley.com","address":"Kingston, Cambridge","phones":[{"number":"07710 809224"}],"emails":[],"contacts":[{"name":"Simon Gardner","title":"Directors","phone":"07710 809224","email":""},{"name":"Dr Sarah Denley","title":"Directors","phone":"","email":""}],"description":"Independent property buying agent in Kingston, Cambridge. Contact: Simon Gardner, Dr Sarah Denley (directors). Owner verified against Companies House (company no. 11912462), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"11912462"},{"id":"cbq-getbeauty","businessName":"getBEAUTY","industry":"Beauty salon","website":"https://getbeauty.uk","address":"Cambridge","phones":[{"number":"07758 144991"}],"emails":[{"address":"contact@getbeauty.uk"}],"contacts":[{"name":"Ramona Ristea","title":"Founder","phone":"07758 144991","email":"contact@getbeauty.uk"}],"description":"Independent beauty salon in Cambridge. Contact: Ramona Ristea (founder). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-hardwick-clinic","businessName":"Hardwick Clinic","industry":"Aesthetics clinic","website":"https://hardwickclinic.co.uk","address":"Hardwick, Cambridge","phones":[{"number":"07501 331191"}],"emails":[{"address":"hardwickclinic@yahoo.co.uk"}],"contacts":[{"name":"Dr Tatyana Lapa-Enright","title":"Founder, 2013","phone":"07501 331191","email":"hardwickclinic@yahoo.co.uk"}],"description":"Independent aesthetics clinic in Hardwick, Cambridge. Contact: Dr Tatyana Lapa-Enright (founder, 2013). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-hurst-park-dental","businessName":"Hurst Park Dental","industry":"Private dentist","website":"https://hurstparkdental.com","address":"Cambridge","phones":[{"number":"01223 356765"}],"emails":[],"contacts":[{"name":"Max Leslie","title":"Lead cosmetic dentist","phone":"01223 356765","email":""}],"description":"Independent private dentist in Cambridge. Contact: Max Leslie (lead cosmetic dentist). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-katie-malik-design-studio","businessName":"Katie Malik Design Studio","industry":"Interior design","website":"https://katiemalik.co.uk","address":"Saffron Walden","phones":[{"number":"01223 613016"}],"emails":[{"address":"info@katiemalik.co.uk"}],"contacts":[{"name":"Katie Malik","title":"Founder","phone":"01223 613016","email":"info@katiemalik.co.uk"}],"description":"Independent interior design in Saffron Walden. Contact: Katie Malik (founder). Owner named on the business's own website and confirmed as an active director at Companies House (company no. 12255650).","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"12255650"},{"id":"cbq-let-s-go-punting","businessName":"Let's Go Punting","industry":"Punting tours","website":"https://letsgopunting.co.uk","address":"30 Milton Road, Cambridge","phones":[{"number":"01223 651659"}],"emails":[{"address":"info@letsgopunting.co.uk"}],"contacts":[{"name":"Simon Godfrey","title":"Directors","phone":"01223 651659","email":"info@letsgopunting.co.uk"},{"name":"Caroline Godfrey","title":"Directors","phone":"","email":""}],"description":"Independent punting tours in 30 Milton Road, Cambridge. Contact: Simon Godfrey, Caroline Godfrey (directors). Owner verified against Companies House (company no. 08246998), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"08246998"},{"id":"cbq-mb-hair-studio","businessName":"MB Hair Studio","industry":"Hair salon","website":"https://mb-hairstudio.co.uk","address":"Cambridge","phones":[{"number":"01223 566882"}],"emails":[{"address":"bookings@mb-hairstudio.co.uk"}],"contacts":[{"name":"Mesut Can Polat","title":"Salon owners","phone":"01223 566882","email":"bookings@mb-hairstudio.co.uk"},{"name":"Beata Drzala","title":"Salon owners","phone":"","email":""}],"description":"Independent hair salon in Cambridge. Contact: Mesut Can Polat, Beata Drzala (salon owners). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-mm-wealth","businessName":"MM Wealth","industry":"Financial planning","website":"https://mmwealth.co.uk","address":"Girton, Cambridge","phones":[{"number":"01223 233331"}],"emails":[],"contacts":[{"name":"Adrian Atkinson","title":"Directors","phone":"01223 233331","email":""},{"name":"Rajwinder Basra","title":"Directors","phone":"","email":""},{"name":"Marc Fuller","title":"Directors","phone":"","email":""}],"description":"Independent financial planning in Girton, Cambridge. Contact: Adrian Atkinson, Rajwinder Basra, Marc Fuller (directors). Owner verified against Companies House (company no. 01454074), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"01454074"},{"id":"cbq-mensroom-cambridge","businessName":"Mensroom Cambridge","industry":"Barber","website":"https://mensroomcambridge.co.uk","address":"Cherry Hinton, Cambridge","phones":[{"number":"01223 211056"}],"emails":[],"contacts":[{"name":"Simon Swinton","title":"Director","phone":"01223 211056","email":""}],"description":"Independent barber in Cherry Hinton, Cambridge. Contact: Simon Swinton (director). Owner verified against Companies House (company no. 06331061), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"06331061"},{"id":"cbq-midsummer-house","businessName":"Midsummer House","industry":"Restaurant (2 Michelin stars)","website":"https://midsummerhouse.co.uk","address":"Midsummer Common, Cambridge","phones":[{"number":"01223 369299"}],"emails":[{"address":"mshkitchen@midsummerhouse.co.uk"}],"contacts":[{"name":"Daniel Clifford","title":"Chef patron / owner","phone":"01223 369299","email":"mshkitchen@midsummerhouse.co.uk"}],"description":"Independent restaurant (2 michelin stars) in Midsummer Common, Cambridge. Contact: Daniel Clifford (chef patron / owner). Owner named on the business's own website and confirmed as an active director at Companies House (company no. OC365609).","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"OC365609"},{"id":"cbq-morgans-butchery","businessName":"Morgans Butchery","industry":"Butcher","website":"https://morgansbutchery.co.uk","address":"Baythorne Hall, Haverhill","phones":[{"number":"07547 323631"}],"emails":[{"address":"morgansbutchery@outlook.com"}],"contacts":[{"name":"Amy Nicholas","title":"Directors","phone":"07547 323631","email":"morgansbutchery@outlook.com"},{"name":"Miles Nicholas","title":"Directors","phone":"","email":""}],"description":"Independent butcher in Baythorne Hall, Haverhill. Contact: Amy Nicholas, Miles Nicholas (directors). Owner verified against Companies House (company no. 11692804), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"11692804"},{"id":"cbq-nicholas-hythe-kitchen-design","businessName":"Nicholas Hythe Kitchen Design","industry":"Kitchen design","website":"https://nhkitchendesign.com","address":"St Ives, Cambridgeshire","phones":[{"number":"01353 786598"}],"emails":[{"address":"info@nicholashythe.co.uk"}],"contacts":[{"name":"Ross Halliday","title":"Directors","phone":"01353 786598","email":"info@nicholashythe.co.uk"},{"name":"William Halliday","title":"Directors","phone":"","email":""}],"description":"Independent kitchen design in St Ives, Cambridgeshire. Contact: Ross Halliday, William Halliday (directors). Owner verified against Companies House (company no. 13517645), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"13517645"},{"id":"cbq-physioteq","businessName":"PhysioTeq","industry":"Physiotherapy","website":"https://physioteq.co.uk","address":"Barton Road, Cambridge","phones":[{"number":"01223 958051"}],"emails":[],"contacts":[{"name":"Lorraine Quantrell","title":"Directors","phone":"01223 958051","email":""},{"name":"Thomas Quantrell","title":"Directors","phone":"","email":""}],"description":"Independent physiotherapy in Barton Road, Cambridge. Contact: Lorraine Quantrell, Thomas Quantrell (directors). Owner verified against Companies House (company no. 11906176), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"11906176"},{"id":"cbq-pilatesfit-cambridge","businessName":"Pilatesfit Cambridge","industry":"Pilates & physio","website":"https://pilatesfitcambridge.co.uk","address":"Cambridge","phones":[{"number":"01223 914415"}],"emails":[],"contacts":[{"name":"Rowan Bailey","title":"Directors","phone":"01223 914415","email":""},{"name":"Oliver Wilson","title":"Directors","phone":"","email":""}],"description":"Independent pilates & physio in Cambridge. Contact: Rowan Bailey, Oliver Wilson (directors). Owner verified against Companies House (company no. 08857086), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"08857086"},{"id":"cbq-revive-massage-therapy","businessName":"Revive Massage Therapy","industry":"Massage","website":"https://revivemassagecambourne.co.uk","address":"Cambourne, Cambridge","phones":[{"number":"07931 150031"}],"emails":[{"address":"aneta.plutowska@gmail.com"}],"contacts":[{"name":"Aneta Plutowska","title":"Founder","phone":"07931 150031","email":"aneta.plutowska@gmail.com"}],"description":"Independent massage in Cambourne, Cambridge. Contact: Aneta Plutowska (founder). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-rulos-barbers","businessName":"Rulos Barbers","industry":"Barber","website":"https://rulos.co.uk","address":"Cambridge","phones":[{"number":"01223 778593"}],"emails":[],"contacts":[{"name":"Giovanni Favarulo","title":"Founder","phone":"01223 778593","email":""}],"description":"Independent barber in Cambridge. Contact: Giovanni Favarulo (founder). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-rutherford-s-punting","businessName":"Rutherford's Punting","industry":"Punting tours","website":"https://rutherfordspunting.com","address":"Searle Street, Cambridge","phones":[{"number":"01223 322200"}],"emails":[],"contacts":[{"name":"James Rutherford","title":"Directors","phone":"01223 322200","email":""},{"name":"Emma Wynne","title":"Directors","phone":"","email":""}],"description":"Independent punting tours in Searle Street, Cambridge. Contact: James Rutherford, Emma Wynne (directors). Owner verified against Companies House (company no. 12207225), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"12207225"},{"id":"cbq-salus-wellness","businessName":"Salus Wellness","industry":"Wellness clinic","website":"https://salus-wellness.com","address":"Cambridge Place, Cambridge","phones":[{"number":"01223 300222"}],"emails":[],"contacts":[{"name":"Massimo Gaetani","title":"Director","phone":"01223 300222","email":""}],"description":"Independent wellness clinic in Cambridge Place, Cambridge. Contact: Massimo Gaetani (director). Owner verified against Companies House (company no. 07241554), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"07241554"},{"id":"cbq-scholars-punting-cambridge","businessName":"Scholars Punting Cambridge","industry":"Punting tours","website":"https://scholarspuntingcambridge.co.uk","address":"Hope Street, Cambridge","phones":[{"number":"01223 430049"}],"emails":[{"address":"ashley@scholarspuntingcambridge.co.uk"}],"contacts":[{"name":"Ashley Dalton","title":"Director","phone":"01223 430049","email":"ashley@scholarspuntingcambridge.co.uk"}],"description":"Independent punting tours in Hope Street, Cambridge. Contact: Ashley Dalton (director). Owner verified against Companies House (company no. 11851199), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"11851199"},{"id":"cbq-scruffs","businessName":"Scruffs","industry":"Hair salon","website":"https://scruffs.co.uk","address":"Cambridge","phones":[{"number":"01223 355358"}],"emails":[],"contacts":[{"name":"Garry Chapman","title":"Owners (2nd generation)","phone":"01223 355358","email":""},{"name":"Grant Chapman","title":"Owners (2nd generation)","phone":"","email":""}],"description":"Independent hair salon in Cambridge. Contact: Garry Chapman, Grant Chapman (owners (2nd generation)). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-scudamore-s-punting","businessName":"Scudamore's Punting","industry":"Punting tours","website":"https://scudamores.com","address":"Granta Place, Mill Lane, Cambridge","phones":[{"number":"01223 359750"}],"emails":[{"address":"enquiries@scudamores.com"}],"contacts":[{"name":"James Macnaghten","title":"Directors","phone":"01223 359750","email":"enquiries@scudamores.com"},{"name":"Roderick Ingersent","title":"Directors","phone":"","email":""}],"description":"Independent punting tours in Granta Place, Mill Lane, Cambridge. Contact: James Macnaghten, Roderick Ingersent (directors). Owner verified against Companies House (company no. 02787361), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"02787361"},{"id":"cbq-soho-fine-art-cambridge","businessName":"Soho Fine Art Cambridge","industry":"Art gallery","website":"https://sohofineart.co.uk","address":"Cambridge","phones":[{"number":"01223 304676"}],"emails":[{"address":"cambridge@sohofineart.co.uk"}],"contacts":[{"name":"Jackie Ritsema","title":"Executive Gallery Director","phone":"01223 304676","email":"cambridge@sohofineart.co.uk"}],"description":"Independent art gallery in Cambridge. Contact: Jackie Ritsema (executive gallery director). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-the-barbers-cambridge","businessName":"The Barbers Cambridge","industry":"Barber","website":"https://thebarberscambridge.co.uk","address":"27 King Street, Cambridge","phones":[{"number":"01223 470126"}],"emails":[],"contacts":[{"name":"Louise Traynier","title":"Director","phone":"01223 470126","email":""}],"description":"Independent barber in 27 King Street, Cambridge. Contact: Louise Traynier (director). Owner verified against Companies House (company no. 11340071), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"11340071"},{"id":"cbq-total-health-clinics","businessName":"Total Health Clinics","industry":"Physiotherapy","website":"https://totalhealthclinics.com","address":"Cambridge","phones":[{"number":"01223 355344"}],"emails":[],"contacts":[{"name":"Ben Barker","title":"Founder","phone":"01223 355344","email":""}],"description":"Independent physiotherapy in Cambridge. Contact: Ben Barker (founder). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""},{"id":"cbq-willow-grange-farm-shop","businessName":"Willow Grange Farm Shop","industry":"Farm shop & cafe","website":"https://willowgrangefarm.co.uk","address":"Cambridge","phones":[{"number":"01223 481183"}],"emails":[{"address":"info@willowgrangefarm.co.uk"}],"contacts":[{"name":"Clara Campbell-Beavis","title":"Directors","phone":"01223 481183","email":"info@willowgrangefarm.co.uk"},{"name":"Errol Campbell-Beavis","title":"Directors","phone":"","email":""}],"description":"Independent farm shop & cafe in Cambridge. Contact: Clara Campbell-Beavis, Errol Campbell-Beavis (directors). Owner verified against Companies House (company no. 15617221), registered in Cambridgeshire.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":"15617221"},{"id":"cbq-burr-bridal","businessName":"Burr Bridal","industry":"Bridal boutique","website":"https://burrbridal.co.uk","address":"Cambridge","phones":[{"number":"01223 323230"}],"emails":[],"contacts":[{"name":"Kim Burr","title":"Founder & owner","phone":"01223 323230","email":""}],"description":"Independent bridal boutique in Cambridge. Contact: Kim Burr (founder & owner). Owner name published on the business's own website.","source":"research","status":"qualified","list":"cambridge-boutique","companiesHouse":""}]; } catch (e) { CBQ_LEADS = []; }
+
+// Idempotent: only ever ADDS ids that are missing. An existing lead is left completely alone, so
+// a rep's notes, stage moves and claims survive every redeploy of this file.
+(function seedCambridgeBoutiques() {
+  if (!Array.isArray(state.leads) || !Array.isArray(CBQ_LEADS) || !CBQ_LEADS.length) return;
+  const have = new Set(state.leads.map(l => l && l.id));
+  let added = 0;
+  CBQ_LEADS.forEach(src => {
+    if (!src || !src.id || have.has(src.id)) return;
+    state.leads.push(normalizeLead({
+      id: src.id,
+      businessName: src.businessName || '',
+      industry: src.industry || '',
+      website: src.website || '',
+      address: src.address || '',
+      phones: Array.isArray(src.phones) ? src.phones.slice() : [],
+      emails: Array.isArray(src.emails) ? src.emails.slice() : [],
+      contacts: Array.isArray(src.contacts) ? src.contacts.map(c => ({ ...c })) : [],
+      description: src.description || '',
+      source: src.source || 'research',
+      dateAdded: todayISO,
+      status: 'qualified',
+      list: CBQ_LIST,
+      companiesHouse: src.companiesHouse || '',
+      qualification: { strategyDesign: '', experienceDesign: '', digitalCommerce: '', growthIntent: '', weaknessesOpportunities: '', dateQualified: todayISO },
+      crm: null,
+      activity: []
+    }));
+    added++;
+  });
+  if (added) { try { saveState(); } catch (_) {} }
+})();
+
+// True for any lead that belongs to a standalone researched list, so the Lead Bank, the
+// Qualified Leads grid and their sidebar counts can leave it out and the tab stays "its own thing".
+function isListLead(l) { return !!(l && l.list); }
+function cbqLeads() { return state.leads.filter(l => l && l.list === CBQ_LIST && l.status !== 'archive'); }
+
 // ========== HELPERS ==========
 function getLeadById(id) {
   return state.leads.find(l => l.id === id);
@@ -2545,9 +2605,9 @@ const DISPOSITIONS = [
 function getDispositionLabel(val) { return DISPOSITIONS.find(d => d.value === val)?.label || 'None'; }
 function getDispositionBadge(val) { return DISPOSITIONS.find(d => d.value === val)?.badge || 'badge-neutral'; }
 
-const SOURCES = ['manual','linkedin','google','referral','event','other'];
+const SOURCES = ['manual','linkedin','google','referral','event','research','other'];
 function sourceLabel(s) {
-  const labels = { manual: 'Manual Entry', linkedin: 'LinkedIn', google: 'Google', referral: 'Referral', event: 'Event', other: 'Other' };
+  const labels = { manual: 'Manual Entry', linkedin: 'LinkedIn', google: 'Google', referral: 'Referral', event: 'Event', research: 'Desk Research', other: 'Other' };
   return labels[s] || s;
 }
 
@@ -2928,11 +2988,12 @@ function savePrefs() {
 // ========== SECTION TITLES ==========
 const SECTION_TITLES = {
   home: 'Home', 'lead-bank': 'Lead Bank', 'qualified-leads': 'Qualified Leads',
+  'cambridge-boutique': 'Cambridge Boutiques',
   crm: 'CRM / Outreach', meetings: 'Meetings', archive: 'Archive / Backlog',
   playbooks: 'Playbooks', reports: 'Reports', map: 'Map', 'activity-monitor': 'Activity Monitor'
 };
 const SECTION_ICONS = {
-  'qualified-leads': 'check-circle', archive: 'archive', playbooks: 'book-open',
+  'qualified-leads': 'check-circle', 'cambridge-boutique': 'store', archive: 'archive', playbooks: 'book-open',
   reports: 'bar-chart-3', map: 'map', 'activity-monitor': 'activity'
 };
 
@@ -3025,7 +3086,7 @@ document.getElementById('action-sheet-overlay').addEventListener('click', () => 
 function renderMoreSheet() {
   const c = document.getElementById('more-sheet-content');
   if (!c) return;
-  const sections = ['qualified-leads', 'archive', 'playbooks', 'reports', 'map']
+  const sections = ['qualified-leads', 'cambridge-boutique', 'archive', 'playbooks', 'reports', 'map']
     .concat(canViewActivityMonitor() ? ['activity-monitor'] : []);
   const user = getCurrentUser();
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -3099,6 +3160,7 @@ function showSection(sectionId) {
   // Reset incremental-render limits when switching sections
   state.lbLimit = LB_PAGE;
   state.crmLimit = CRM_PAGE;
+  state.cbqLimit = CBQ_PAGE;
   // Clear cross-section bulk selection on navigation
   if (state.bulkScope && state.bulkScope !== sectionId && !(sectionId === 'crm' && state.bulkScope === 'crm')) {
     state.bulkSelection = [];
@@ -3116,6 +3178,7 @@ function renderActiveSection() {
     case 'home': renderHome(); break;
     case 'lead-bank': renderLeadBank(); break;
     case 'qualified-leads': renderQualifiedLeads(); break;
+    case 'cambridge-boutique': renderCambridgeBoutique(); break;
     case 'crm': renderCRM(); break;
     case 'meetings': renderMeetings(); break;
     case 'archive': renderArchive(); break;
@@ -3356,9 +3419,10 @@ function renderMap() {
 
 // ========== SIDEBAR BADGES ==========
 function renderSidebarBadges() {
-  const leadBankCount = state.leads.filter(l => l.status !== 'archive').length;
+  const leadBankCount = state.leads.filter(l => l.status !== 'archive' && !isListLead(l)).length;
   // Waiting-to-be-moved only, so the badge visibly drops the moment a lead goes to the CRM.
-  const qualCount = state.leads.filter(l => l.status === 'qualified').length;
+  const qualCount = state.leads.filter(l => l.status === 'qualified' && !isListLead(l)).length;
+  const cbqCount = cbqLeads().filter(l => l.status === 'qualified').length;
   const crmCount = state.leads.filter(l => l.status === 'crm').length;
   const meetCount = state.leads.filter(l => l.status === 'crm' && l.crm && l.crm.meetingBooked).length;
   const archCount = state.leads.filter(l => l.status === 'archive').length;
@@ -3367,6 +3431,11 @@ function renderSidebarBadges() {
 
   document.getElementById('badge-lead-bank').textContent = leadBankCount;
   document.getElementById('badge-qualified').textContent = qualCount;
+  const cbqBadge = document.getElementById('badge-cambridge-boutique');
+  if (cbqBadge) {
+    cbqBadge.textContent = cbqCount;
+    cbqBadge.title = cbqCount + ' Cambridge boutique lead' + (cbqCount !== 1 ? 's' : '') + ' not yet moved to the CRM';
+  }
 
   const crmBadge = document.getElementById('badge-crm');
   if (overdueInCRM > 0) {
@@ -3601,7 +3670,8 @@ function renderHome() {
 // dropped keyboard focus on every keystroke.
 function getFilteredLeadBank() {
   const f = state.filters.leadBank;
-  let leads = state.leads.filter(l => l.status !== 'archive');
+  // List leads (e.g. Cambridge Boutiques) are deliberately absent: they have their own tab.
+  let leads = state.leads.filter(l => l.status !== 'archive' && !isListLead(l));
   const totalCount = leads.length;
 
   if (f.search) {
@@ -3945,7 +4015,7 @@ function distinctValues(leads, fn) {
 }
 function getFilteredQualified() {
   const f = state.filters.qualified;
-  let leads = state.leads.filter(l => l.status === 'qualified');
+  let leads = state.leads.filter(l => l.status === 'qualified' && !isListLead(l));
   const totalCount = leads.length;
   if (f.search) {
     const s = f.search.toLowerCase();
@@ -3974,8 +4044,8 @@ function renderQualifiedLeads() {
   // "Move to CRM" looked like it did nothing at all. Qualified Leads now holds ONLY leads
   // still waiting to be moved; once moved, the lead lives in CRM / Outreach.
   const f = state.filters.qualified;
-  const all = state.leads.filter(l => l.status === 'qualified');
-  const unqualified = state.leads.filter(l => l.status === 'unqualified');
+  const all = state.leads.filter(l => l.status === 'qualified' && !isListLead(l));
+  const unqualified = state.leads.filter(l => l.status === 'unqualified' && !isListLead(l));
   const hasUnqual = unqualified.length > 0;
   const industries = distinctValues(all, l => l.industry);
   const cities = distinctValues(all, l => leadCity(l));
@@ -4116,6 +4186,175 @@ function renderQualifiedList() {
     });
     html += '</div>';
     if (qualified.length > limit) html += renderShowMore('qualified', qualified.length - limit);
+  }
+
+  listEl.innerHTML = html;
+  lucide.createIcons({ nodes: [listEl] });
+}
+
+// ========== RENDER: CAMBRIDGE BOUTIQUES ==========
+// Its own list, its own filters, its own counts. Leads leave here the same way they leave
+// Qualified Leads — press Move to CRM and they show up in CRM / Outreach — but the row stays
+// visible here with an "In CRM" badge so the list always reads as a complete, worked territory.
+function getFilteredCambridge() {
+  const f = state.filters.cambridge;
+  let leads = cbqLeads();
+  const totalCount = leads.length;
+  if (f.search) {
+    const s = f.search.toLowerCase();
+    leads = leads.filter(l =>
+      l.businessName.toLowerCase().includes(s) ||
+      (l.industry || '').toLowerCase().includes(s) ||
+      (l.address || '').toLowerCase().includes(s) ||
+      (l.description || '').toLowerCase().includes(s) ||
+      (l.contacts || []).some(c => (c.name || '').toLowerCase().includes(s))
+    );
+  }
+  if (f.industry !== 'all') leads = leads.filter(l => (l.industry || '') === f.industry);
+  if (f.assignedTo !== 'all') leads = leads.filter(l => l.assignedTo === f.assignedTo);
+  if (f.hasEmail) leads = leads.filter(l => (l.emails && l.emails.length) || (l.contacts || []).some(c => c && c.email));
+  if (f.verified === 'ch') leads = leads.filter(l => !!l.companiesHouse);
+  else if (f.verified === 'web') leads = leads.filter(l => !l.companiesHouse);
+
+  const sort = f.sort || 'name';
+  if (sort === 'name') leads.sort((a, b) => a.businessName.localeCompare(b.businessName));
+  else if (sort === 'industry') leads.sort((a, b) => (a.industry || '').localeCompare(b.industry || '') || a.businessName.localeCompare(b.businessName));
+  else if (sort === 'score') leads.sort((a, b) => getOpportunityScore(b) - getOpportunityScore(a));
+  return { leads, totalCount };
+}
+
+function renderCambridgeBoutique() {
+  const container = document.getElementById('cambridge-boutique-content');
+  if (!container) return;
+  const f = state.filters.cambridge;
+  const all = cbqLeads();
+  const industries = distinctValues(all, l => l.industry);
+  const chCount = all.filter(l => l.companiesHouse).length;
+  const emailCount = all.filter(l => (l.emails && l.emails.length) || (l.contacts || []).some(c => c && c.email)).length;
+  const workedCount = all.filter(l => l.status === 'crm').length;
+
+  let html = `
+    <div class="section-header">
+      <h1>Cambridge Boutiques</h1>
+    </div>
+    <p style="color:var(--color-text-muted);font-size:var(--text-sm);margin:0 0 var(--space-3);max-width:70ch;">
+      ${all.length} independent Cambridge businesses. Every one has a website, a direct phone number and a
+      named owner or founder, or it is not on this list. ${chCount} owner names are confirmed against an active
+      Companies House directorship; the rest are published by the business itself. ${workedCount} moved to the CRM so far.
+    </p>
+    <div class="filter-bar">
+      <input type="text" class="form-input" placeholder="Search name, owner, category or area..." value="${escapeHtml(f.search)}" data-filter="cbq-search" aria-label="Search Cambridge boutiques">
+      <select class="form-select" data-filter="cbq-industry" aria-label="Filter by category">
+        <option value="all"${f.industry==='all'?' selected':''}>All Categories</option>
+        ${industries.map(i => `<option value="${escapeHtml(i)}"${f.industry===i?' selected':''}>${escapeHtml(i)}</option>`).join('')}
+      </select>
+      <select class="form-select" data-filter="cbq-verified" aria-label="Filter by how the owner name was verified">
+        <option value="all"${f.verified==='all'?' selected':''}>Any verification</option>
+        <option value="ch"${f.verified==='ch'?' selected':''}>Companies House confirmed</option>
+        <option value="web"${f.verified==='web'?' selected':''}>Website stated</option>
+      </select>
+      <select class="form-select" data-filter="cbq-assigned" aria-label="Filter by assigned consultant">
+        <option value="all"${f.assignedTo==='all'?' selected':''}>All Sales</option>
+        ${ownerOptions(f.assignedTo === 'all' ? '' : f.assignedTo).map(c => `<option value="${escapeHtml(c)}"${f.assignedTo===c?' selected':''}>${escapeHtml(c)}</option>`).join('')}
+      </select>
+      <button class="today-chip${f.hasEmail ? ' active' : ''}" data-action="toggle-cbq-email" aria-pressed="${!!f.hasEmail}"><i data-lucide="mail" aria-hidden="true"></i> Has email (${emailCount})</button>
+      <select class="form-select" data-filter="cbq-sort" aria-label="Sort Cambridge boutiques">
+        <option value="name"${(f.sort||'name')==='name'?' selected':''}>Sort by Name</option>
+        <option value="industry"${f.sort==='industry'?' selected':''}>Sort by Category</option>
+        <option value="score"${f.sort==='score'?' selected':''}>Sort by Score</option>
+      </select>
+      <span class="count-label" id="cbq-count"></span>
+    </div>
+    <div class="qual-bulk-row">
+      <button class="btn btn-ghost btn-sm" data-action="cbq-select-all"><i data-lucide="check-square" aria-hidden="true"></i> Select all shown</button>
+    </div>
+    <div class="bulk-bar${(state.bulkScope === 'cambridge' && state.bulkSelection && state.bulkSelection.length) ? ' active' : ''}" id="bulk-bar-cambridge">
+      <span class="bulk-count">${(state.bulkSelection || []).length} selected</span>
+      <select class="form-select bulk-action-select" data-action="bulk-action" data-scope="cambridge" aria-label="Bulk action">
+        <option value="">Choose action...</option>
+        <option value="move-to-crm">Move to CRM / Outreach</option>
+        ${canReassignLeads() ? '<optgroup label="Reassign to">' + SALES_TEAM.map(c => `<option value="reassign:${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') + '</optgroup>' : ''}
+        <option value="archive">Archive</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" data-action="bulk-clear">Clear selection</button>
+    </div>
+    <div id="cambridge-list"></div>
+  `;
+  container.innerHTML = html;
+  lucide.createIcons({ nodes: [container] });
+  renderCambridgeList();
+}
+
+// Split out so typing in the search box never destroys the focused input.
+function renderCambridgeList() {
+  const listEl = document.getElementById('cambridge-list');
+  if (!listEl) return;
+  const { leads, totalCount } = getFilteredCambridge();
+  const countEl = document.getElementById('cbq-count');
+  if (countEl) countEl.textContent = `Showing ${leads.length} of ${totalCount}`;
+
+  let html = '';
+  if (leads.length === 0) {
+    html += `
+      <div class="empty-state">
+        <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="60" cy="60" r="40" stroke="currentColor" stroke-width="2" fill="none"/>
+          <path d="M45 60 L55 70 L75 50" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>${totalCount === 0 ? 'The Cambridge list is empty' : 'Nothing matches these filters'}</h3>
+        <p>${totalCount === 0 ? 'This tab fills from the researched Cambridge list built into the app.' : 'There are ' + totalCount + ' businesses on this list. Widen the filters above to see them.'}</p>
+      </div>
+    `;
+  } else {
+    const limit = state.cbqLimit || CBQ_PAGE;
+    const visible = leads.slice(0, limit);
+    html += '<div class="lead-grid">';
+    visible.forEach(l => {
+      const sb = statusBadgeFor(l.status);
+      const owner = (l.contacts || []).filter(c => c && c.name);
+      const ownerNames = owner.map(c => c.name).join(' & ');
+      const ownerRole = (owner[0] && owner[0].title) || '';
+      const phone = (l.phones && l.phones[0] && l.phones[0].number) || (owner.find(c => c.phone) || {}).phone || '';
+      const email = (l.emails && l.emails[0] && l.emails[0].address) || (owner.find(c => c.email) || {}).email || '';
+      const selected = (state.bulkSelection || []).includes(l.id);
+      html += `
+        <div class="card lead-card${selected ? ' selected' : ''}">
+          <div class="lead-card-header">
+            <div style="min-width:0;">
+              <div class="lead-card-name"><input type="checkbox" class="bulk-check" data-action="bulk-toggle" data-scope="cambridge" data-id="${l.id}" ${selected ? 'checked' : ''} aria-label="Select ${escapeHtml(l.businessName)}"> ${escapeHtml(l.businessName)}</div>
+              ${l.industry ? `<span class="badge badge-neutral">${escapeHtml(l.industry)}</span>` : ''}
+              ${l.address ? `<span class="badge badge-neutral">${escapeHtml(l.address)}</span>` : ''}
+            </div>
+            <div style="display:flex;align-items:center;gap:var(--space-2);">
+              ${renderScoreBadge(l)}
+              <span class="badge ${sb.cls}">${sb.label}</span>
+            </div>
+          </div>
+          ${ownerNames ? `<div style="font-size:var(--text-sm);margin:var(--space-2) 0;"><strong>${escapeHtml(ownerNames)}</strong>${ownerRole ? ` <span style="color:var(--color-text-muted);">&middot; ${escapeHtml(ownerRole)}</span>` : ''}</div>` : ''}
+          <div class="service-tags">
+            ${l.companiesHouse
+              ? `<span class="service-tag filled" title="Owner is an active director at Companies House">Companies House &#10003; ${escapeHtml(l.companiesHouse)}</span>`
+              : '<span class="service-tag empty" title="Owner name published by the business itself">Website stated</span>'}
+            ${email ? '<span class="service-tag filled">Email &#10003;</span>' : '<span class="service-tag empty">No email</span>'}
+          </div>
+          <div class="lead-card-meta">
+            ${l.website ? `<a href="${escapeHtml(l.website)}" target="_blank" rel="noopener noreferrer">${escapeHtml(String(l.website).replace(/^https?:\/\//, ''))}</a>` : '<span></span>'}
+            ${phone ? `<a class="lead-card-phone" href="tel:${escapeHtml(String(phone).replace(/[^+0-9]/g,''))}"><i data-lucide="phone" aria-hidden="true"></i> ${escapeHtml(phone)}</a>` : '<span class="lead-card-nophone">No phone</span>'}
+          </div>
+          ${renderAttribution(l)}
+          ${renderClaimBadge(l)}
+          ${renderLastActivity(l)}
+          <div class="lead-card-actions">
+            ${(l.phones && l.phones.length) ? `<button class="btn btn-sm" style="background:var(--color-primary);color:white" data-action="call-lead" data-id="${l.id}"><i data-lucide="phone" aria-hidden="true"></i> Call</button>` : ''}
+            ${email ? `<a class="btn btn-ghost btn-sm" href="mailto:${escapeHtml(email)}"><i data-lucide="mail" aria-hidden="true"></i> Email</a>` : ''}
+            <button class="btn btn-ghost btn-sm" data-action="view-qual" data-id="${l.id}"><i data-lucide="eye" aria-hidden="true"></i> View Full</button>
+            ${l.status === 'qualified' ? `<button class="btn btn-primary btn-sm" data-action="move-to-crm" data-id="${l.id}"><i data-lucide="arrow-right" aria-hidden="true"></i> Move to CRM</button>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+    if (leads.length > limit) html += renderShowMore('cambridge', leads.length - limit);
   }
 
   listEl.innerHTML = html;
@@ -5659,6 +5898,9 @@ document.getElementById('section-home').addEventListener('click', e => {
         showSection('crm');
         openCRMSheet(lead.id);
       }
+      // A list lead is not in the Qualified grid or the Lead Bank, so send it to its own tab
+      // instead of a section where the rep would look at it and see nothing.
+      else if (isListLead(lead)) { showSection('cambridge-boutique'); openPanel('view-lead', lead); }
       else if (lead.status === 'qualified') { showSection('qualified-leads'); openPanel('view-lead', lead); }
       else { showSection('lead-bank'); openPanel('view-lead', lead); }
     }
@@ -5826,6 +6068,80 @@ document.getElementById('section-qualified-leads').addEventListener('change', e 
   savePrefs();
   state.qualLimit = QUAL_PAGE;
   renderQualifiedList();
+});
+
+// Cambridge Boutiques events — same actions as Qualified Leads, its own filter + limit state.
+document.getElementById('section-cambridge-boutique').addEventListener('click', e => {
+  const target = e.target.closest('[data-action]');
+  if (!target) return;
+  const action = target.dataset.action;
+  const id = target.dataset.id;
+
+  if (action === 'call-lead') openDialer(id, target.dataset.num);
+  else if (action === 'view-qual') openPanel('view-qualification', getLeadById(id));
+  else if (action === 'move-to-crm') {
+    const __mv = getLeadById(id);
+    const __mvName = (__mv && __mv.businessName) ? __mv.businessName : 'Lead';
+    moveToCRM(id);
+    showToast(__mvName + ' moved to CRM / Outreach', 'success');
+    renderAll();
+  } else if (action === 'toggle-cbq-email') {
+    state.filters.cambridge.hasEmail = !state.filters.cambridge.hasEmail;
+    savePrefs();
+    state.cbqLimit = CBQ_PAGE;
+    renderCambridgeBoutique();
+  } else if (action === 'show-more') {
+    state.cbqLimit = (state.cbqLimit || CBQ_PAGE) + CBQ_PAGE;
+    renderCambridgeList();
+  } else if (action === 'cbq-select-all') {
+    const { leads } = getFilteredCambridge();
+    const visible = leads.slice(0, state.cbqLimit || CBQ_PAGE).map(l => l.id);
+    const allOn = visible.length > 0 && visible.every(x => (state.bulkSelection || []).includes(x));
+    state.bulkScope = 'cambridge';
+    state.bulkSelection = allOn ? [] : visible;
+    renderCambridgeBoutique();
+  } else if (action === 'bulk-clear') {
+    state.bulkSelection = [];
+    state.bulkScope = null;
+    renderCambridgeBoutique();
+  }
+});
+document.getElementById('section-cambridge-boutique').addEventListener('input', e => {
+  if (e.target.dataset.filter === 'cbq-search') {
+    state.filters.cambridge.search = e.target.value;
+    savePrefs();
+    state.cbqLimit = CBQ_PAGE;
+    renderCambridgeList();
+  }
+});
+document.getElementById('section-cambridge-boutique').addEventListener('change', e => {
+  const action = e.target.dataset.action;
+  if (action === 'bulk-toggle') {
+    state.bulkScope = 'cambridge';
+    state.bulkSelection = state.bulkSelection || [];
+    const id = e.target.dataset.id;
+    if (e.target.checked) { if (!state.bulkSelection.includes(id)) state.bulkSelection.push(id); }
+    else state.bulkSelection = state.bulkSelection.filter(x => x !== id);
+    renderCambridgeBoutique();
+    return;
+  }
+  if (action === 'bulk-action') {
+    applyBulkAction('cambridge', e.target.value);
+    e.target.value = '';
+    return;
+  }
+  const f = e.target.dataset.filter;
+  if (!f) return;
+  const q = state.filters.cambridge;
+  if (f === 'cbq-search') q.search = e.target.value;
+  else if (f === 'cbq-industry') q.industry = e.target.value;
+  else if (f === 'cbq-verified') q.verified = e.target.value;
+  else if (f === 'cbq-assigned') q.assignedTo = e.target.value;
+  else if (f === 'cbq-sort') q.sort = e.target.value;
+  else return;
+  savePrefs();
+  state.cbqLimit = CBQ_PAGE;
+  renderCambridgeList();
 });
 
 // CRM events
@@ -6732,6 +7048,7 @@ function navigateToLead(leadId) {
   if (!lead) return;
   if (lead.status === 'archive') showSection('archive');
   else if (lead.status === 'crm') showSection('crm');
+  else if (isListLead(lead)) showSection('cambridge-boutique');
   else if (lead.status === 'qualified') showSection('qualified-leads');
   else showSection('lead-bank');
 }
