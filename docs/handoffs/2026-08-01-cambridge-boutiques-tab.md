@@ -6,6 +6,15 @@ status: shipped
 
 # Session handoff: Cambridge Boutiques lead list + its own CRM tab
 
+> **SUPERSEDED by round 3 (commit 3c9063c, same day).** The list is now 109 leads at
+> `CBQ_VERSION = 3`, every one carrying an Exa research brief, and the pipeline lives in
+> `research/cambridge/` with its own README instead of a scratch directory. Read that README
+> before starting a round 4. What is still open from this document: the 7 first-name-only
+> businesses below (unchanged, still out), the two role-caveat rows, and who owns the list.
+> Round 3 added three more rows to check: Fantasia (Scuseme) reads as a historical write-up,
+> Planning House Cambridge is a North East national consultancy, and Soho Fine Art shows a
+> Norwich gallery rather than a Cambridge one.
+
 ## Resume protocol
 
 1. Read this whole file
